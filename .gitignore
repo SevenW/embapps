@@ -1,28 +1,11 @@
-# Compiled Object files
-*.slo
-*.lo
+#build output
+*.d
 *.o
-*.obj
+*.elf
+*.hex
 
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
+#eclipse IDE
+.project
+.cproject
+.metadata
+.settings
