@@ -1,0 +1,3 @@
+[submodule "embello"]
+	path = embello
+	url = https://github.com/jeelabs/embello.git
