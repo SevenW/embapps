@@ -1,11 +1,13 @@
 #build output
+/build
 *.d
 *.o
 *.elf
 *.hex
+*.bin
 
-#eclipse IDE
-.project
-.cproject
+##eclipse IDE
+#.project
+#.cproject
 .metadata
-.settings
+#.settings
