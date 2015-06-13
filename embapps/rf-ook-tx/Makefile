@@ -1,5 +1,5 @@
-#CFLAGS += -DSTARTUP_NO_IRQS
-CXXFLAGS += -I.
+CFLAGS += -DCORE_M0PLUS
+CXXFLAGS += -DCORE_M0PLUS -I.
 ISPOPTS += -s
 LINK = LPC812.ld #LPC810.ld | LPC812.ld | LPC824.ld Defines memory layout
 ARCH = lpc8xx
