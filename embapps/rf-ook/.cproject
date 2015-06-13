@@ -14,7 +14,7 @@
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-				<configuration buildProperties="" description="" id="0.1989879564" name="Default" parent="org.eclipse.cdt.build.core.prefbase.cfg">
+				<configuration artifactName="${ProjName}" buildProperties="" description="" id="0.1989879564" name="Default" parent="org.eclipse.cdt.build.core.prefbase.cfg">
 					<folderInfo id="0.1989879564." name="/" resourcePath="">
 						<toolChain id="org.eclipse.cdt.build.core.prefbase.toolchain.1423017139" name="No ToolChain" resourceTypeBasedDiscovery="false" superClass="org.eclipse.cdt.build.core.prefbase.toolchain">
 							<targetPlatform id="org.eclipse.cdt.build.core.prefbase.toolchain.1423017139.1964397995" name=""/>
@@ -28,9 +28,11 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/embello-lib/util}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/embello-lib/vendor}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;C:\ChibiStudio-old\tools\GNU Tools ARM Embedded\4.9 2014q4\arm-none-eabi\include&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/embello-lib/vendor/lpcopen/inc}&quot;"/>
 								</option>
 								<option id="org.eclipse.cdt.build.core.settings.holder.symbols.767285322" name="Symbols" superClass="org.eclipse.cdt.build.core.settings.holder.symbols" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="__GNUC__=1"/>
+									<listOptionValue builtIn="false" value="CORE_M0PLUS=1"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.1740993" languageId="org.eclipse.cdt.core.assembly" languageName="Assembly" sourceContentType="org.eclipse.cdt.core.asmSource" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
@@ -42,9 +44,11 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/embello-lib/util}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/embello-lib/vendor}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;C:\ChibiStudio-old\tools\GNU Tools ARM Embedded\4.9 2014q4\arm-none-eabi\include&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/embello-lib/vendor/lpcopen/inc}&quot;"/>
 								</option>
 								<option id="org.eclipse.cdt.build.core.settings.holder.symbols.971973332" name="Symbols" superClass="org.eclipse.cdt.build.core.settings.holder.symbols" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="__GNUC__=1"/>
+									<listOptionValue builtIn="false" value="CORE_M0PLUS=1"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.319131786" languageId="org.eclipse.cdt.core.g++" languageName="GNU C++" sourceContentType="org.eclipse.cdt.core.cxxSource,org.eclipse.cdt.core.cxxHeader" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
@@ -56,9 +60,11 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/embello-lib/util}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/embello-lib/vendor}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;C:\ChibiStudio-old\tools\GNU Tools ARM Embedded\4.9 2014q4\arm-none-eabi\include&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/embello-lib/vendor/lpcopen/inc}&quot;"/>
 								</option>
 								<option id="org.eclipse.cdt.build.core.settings.holder.symbols.222705740" name="Symbols" superClass="org.eclipse.cdt.build.core.settings.holder.symbols" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="__GNUC__=1"/>
+									<listOptionValue builtIn="false" value="CORE_M0PLUS=1"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.2128889564" languageId="org.eclipse.cdt.core.gcc" languageName="GNU C" sourceContentType="org.eclipse.cdt.core.cSource,org.eclipse.cdt.core.cHeader" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
@@ -79,5 +85,9 @@
 		</scannerConfigBuildInfo>
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
-	<storageModule moduleId="refreshScope"/>
+	<storageModule moduleId="refreshScope" versionNumber="2">
+		<configuration configurationName="Default">
+			<resource resourceType="PROJECT" workspacePath="/rf-ook"/>
+		</configuration>
+	</storageModule>
 </cproject>

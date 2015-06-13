@@ -1,7 +1,8 @@
 // Report received data on the serial port.
 #define chThdYield() // FIXME still used in rf69.h
 
-#include "LPC8xx.h"
+#include "chip.h"
+//#include "LPC8xx.h"
 #include "uart.h"
 #include <stdio.h>
 #include "spi.h"
@@ -124,7 +125,7 @@ void receiveOOK() {
 
     uint32_t new_edge = sampleTicks;
     uint32_t last_edge = new_edge;
-    uint8_t last_data = LPC_GPIO_PORT->B0[DIO2];
+    uint8_t last_data = LPC_GPIO_PORT->B[0][DIO2];
 
     uint16_t flush_cnt = 0;
     uint16_t flush_max = 10000 / tsample; //10ms
@@ -147,7 +148,7 @@ void receiveOOK() {
             if (rssi > rssimax) rssimax=rssi;
         }
 
-        uint8_t data_in = LPC_GPIO_PORT->B0[DIO2];
+        uint8_t data_in = LPC_GPIO_PORT->B[0][DIO2];
         filter = (filter << 1) | (data_in & 0x01);
         //efficient bit count, from literature
         uint8_t c = 0;
@@ -232,6 +233,11 @@ void receiveOOK() {
     return;
 }
 
+#define SYSPLLCTRL_Val      0x24
+#define SYSPLLCLKSEL_Val    0
+#define MAINCLKSEL_Val      3
+#define SYSAHBCLKDIV_Val    2
+
 static void setMaxSpeed () {
     LPC_SYSCON->SYSPLLCLKSEL = SYSPLLCLKSEL_Val;    // select PLL input
     LPC_SYSCON->SYSPLLCLKUEN = 0x01;                // update clock source
@@ -255,7 +261,7 @@ int main () {
     //SystemCoreClockUpdate();
 
     // the device pin mapping is configured at run time based on its id
-    uint16_t devId = LPC_SYSCON->DEVICE_ID;
+    uint16_t devId = LPC_SYSCON->DEVICEID;
     // choose different node id's, depending on the chip type
     uint8_t nodeId = 60;
 
@@ -270,51 +276,51 @@ int main () {
         LPC_SWM->PINENABLE0 = 0xffffffff;
         // lpc810: sck=0p8, ssel=1p5, miso=2p4, mosi=5p1, dio2=3p3, tx=4p2
         //SPI0
-		LPC_SWM->PINASSIGN3 = 0x00FFFFFF;   // sck  -    -    -
-        LPC_SWM->PINASSIGN4 = 0xFF010205;   // -    nss  miso mosi
+		LPC_SWM->PINASSIGN[3] = 0x00FFFFFF;   // sck  -    -    -
+        LPC_SWM->PINASSIGN[4] = 0xFF010205;   // -    nss  miso mosi
         //USART0
-        LPC_SWM->PINASSIGN0 = 0xffffff04;
+        LPC_SWM->PINASSIGN[0] = 0xffffff04;
         DIO2 = 3;
         break;
     case 0x8120:
         nodeId = 12;
-        LPC_SWM->PINASSIGN0 = 0xFFFF0004;
+        LPC_SWM->PINASSIGN[0] = 0xFFFF0004;
         // jnp v2: sck 6, ssel 8, miso 11, mosi 9, irq 10, dio2 1p9
-        LPC_SWM->PINASSIGN3 = 0x06FFFFFF;
-        LPC_SWM->PINASSIGN4 = 0xFF080B09;
+        LPC_SWM->PINASSIGN[3] = 0x06FFFFFF;
+        LPC_SWM->PINASSIGN[4] = 0xFF080B09;
         DIO2 = 1;
         break;
     case 0x8121:
         nodeId = 13;
-        LPC_SWM->PINASSIGN0 = 0xFFFF0004;
+        LPC_SWM->PINASSIGN[0] = 0xFFFF0004;
         // A not working, but B is fine
         // eb20soic A: sck 14, ssel 15, miso 12, mosi 13, irq 8
         //LPC_SWM->PINASSIGN3 = 0x0EFFFFFF;
         //LPC_SWM->PINASSIGN4 = 0xFF0F0C0D;
         // eb20soic B: sck 12, ssel 13, miso 15, mosi 14, irq 8
-        LPC_SWM->PINASSIGN3 = 0x0CFFFFFF;
-        LPC_SWM->PINASSIGN4 = 0xFF0D0F0E;
+        LPC_SWM->PINASSIGN[3] = 0x0CFFFFFF;
+        LPC_SWM->PINASSIGN[4] = 0xFF0D0F0E;
         break;
     case 0x8122:
         nodeId = 14;
-        LPC_SWM->PINASSIGN0 = 0xFFFF0106;
+        LPC_SWM->PINASSIGN[0] = 0xFFFF0106;
         // ea812: sck 12, ssel 13, miso 15, mosi 14
-        LPC_SWM->PINASSIGN3 = 0x0CFFFFFF;
-        LPC_SWM->PINASSIGN4 = 0xFF0D0F0E;
+        LPC_SWM->PINASSIGN[3] = 0x0CFFFFFF;
+        LPC_SWM->PINASSIGN[4] = 0xFF0D0F0E;
         break;
     case 0x8241:
         nodeId = 23;
         // ea824: sck 24, ssel 15, miso 25, mosi 26
-        LPC_SWM->PINASSIGN0 = 0xFFFF1207;
-        LPC_SWM->PINASSIGN3 = 0x18FFFFFF;
-        LPC_SWM->PINASSIGN4 = 0xFF0F191A;
+        LPC_SWM->PINASSIGN[0] = 0xFFFF1207;
+        LPC_SWM->PINASSIGN[3] = 0x18FFFFFF;
+        LPC_SWM->PINASSIGN[4] = 0xFF0F191A;
         break;
     case 0x8242:
         nodeId = 24;
         // jnp v3: sck 17, ssel 23, miso 9, mosi 8, irq 1, dio2 15p11
-        LPC_SWM->PINASSIGN0 = 0xFFFF0004;
-        LPC_SWM->PINASSIGN3 = 0x11FFFFFF;
-        LPC_SWM->PINASSIGN4 = 0xFF170908;
+        LPC_SWM->PINASSIGN[0] = 0xFFFF0004;
+        LPC_SWM->PINASSIGN[3] = 0x11FFFFFF;
+        LPC_SWM->PINASSIGN[4] = 0xFF170908;
         DIO2 = 15;
         break;
     }
