@@ -7,7 +7,7 @@
 #include "spi.h"
 #include "rf69.h"
 #include "radio-ook.h"
-#include "decodeOOK.h"
+#include "decodeOOK_TEST.h"
 
 //configuration items
 uint8_t DIO2 = 15; //GPIO pin DIO2(=DATA)
@@ -18,7 +18,8 @@ uint8_t DIO2 = 15; //GPIO pin DIO2(=DATA)
 uint8_t fixthd = 60;
 //uint32_t frqkHz = 433920;
 uint32_t frqkHz = 868400;
-uint32_t bitrate = 1000;
+//uint32_t bitrate = 300000;
+uint32_t bitrate = 32768;
 uint8_t bw = 16; //0=250kHz, 8=200kHz, 16=167kHz, 1=125kHz, 9=100kHz, 17=83kHz 2=63kHz, 10=50kHz
 
 const uint8_t tsample = 25; //us samples
@@ -51,9 +52,10 @@ KakuDecoder kaku;
 //WH1080DecoderV2 WH1080;
 WH1080DecoderV2a WH1080a;
 //VisonicDecoder viso;
-//EMxDecoder emx;
-//KSxDecoder ksx;
-FSxDecoderA fsx;
+EMxDecoder emx;
+KSxDecoder ksx;
+FSxDecoder fsx;
+FSxDecoderA fsxa;
 //
 #endif
 
@@ -69,26 +71,43 @@ void reportOOK (const char* s, class DecodeOOK& decoder) {
 }
 
 void processBit(uint16_t pulse_dur, uint8_t signal) {
-    //    if (WH1080a.nextPulse(pulse_dur, signal)) {
-    //        reportOOK("WH1080a", WH1080a);
-    //        //set scope trigger
-    //        //palWritePad(GPIOB, 4, 1);
-    //    }
+//	if (WH1080a.nextPulse(pulse_dur, signal)) {
+//		reportOOK("WH1080a", WH1080a);
+//		//set scope trigger
+//		//palWritePad(GPIOB, 4, 1);
+//	}
     if (fsx.nextPulse(pulse_dur, signal)) {
         reportOOK("FS20   ", fsx);
         //set scope trigger
         //palWritePad(GPIOB, 4, 1);
     }
+    if (fsxa.nextPulse(pulse_dur, signal)) {
+        reportOOK("FS20A   ", fsxa);
+        //set scope trigger
+        //palWritePad(GPIOB, 4, 1);
+    }
+//    if (emx.nextPulse(pulse_dur, signal)) {
+//        reportOOK("EMx   ", emx);
+//        //set scope trigger
+//        //palWritePad(GPIOB, 4, 1);
+//    }
+//    if (ksx.nextPulse(pulse_dur, signal)) {
+//        reportOOK("KSx   ", ksx);
+//        //set scope trigger
+//        //palWritePad(GPIOB, 4, 1);
+//    }
 }
 
 void receiveOOK() {
     //moving average buffer
-    const uint8_t avg_len = 7;
+    //const uint8_t avg_len = 7;
+    const uint8_t avg_len = 1;
     uint32_t filter = 0;
     uint32_t sig_mask = (1 << avg_len) - 1;
 
     //Fixed threshold
-    rfa.OOKthdMode(0x00); //0x00=fix, 0x40=peak, 0x80=avg
+    rfa.OOKthdMode(0x40); //0x00=fix, 0x40=peak, 0x80=avg
+    rfa.setBitrate(bitrate);
 
     rfa.setFrequency(frqkHz);
     rfa.setBW(bw);
@@ -101,6 +120,7 @@ void receiveOOK() {
     uint32_t sumrssi = 0;
     uint32_t sumsqrssi = 0;
     uint32_t rssivar = 0;
+    uint32_t rssimax = 0;
 
     uint32_t new_edge = sampleTicks;
     uint32_t last_edge = new_edge;
@@ -124,6 +144,7 @@ void receiveOOK() {
             sumsqrssi += rssi*rssi;
             nrssi++;
             ts_rssi = sampleTicks;
+            if (rssi > rssimax) rssimax=rssi;
         }
 
         uint8_t data_in = LPC_GPIO_PORT->B0[DIO2];
@@ -183,10 +204,10 @@ void receiveOOK() {
                 //printf("THD:keep\r\n");
             }
 
-            printf("RSSI: %3d(v%3d-s%2d) THD:%3d\r\n", rssiavg, rssivar, stddev, fixthd);
+            printf("RSSI: %3d(v%3d-s%2d-m%3d) THD:%3d\r\n", rssiavg, rssivar, stddev, rssimax, fixthd);
             printf("%d polls took %d systicks = %dus - flips = %d\r\n", thdUpdCnt, ts_thdUpdNow - thdUpd, (tsample*(ts_thdUpdNow - thdUpd))/thdUpdCnt, flip_cnt);
 
-            nrssi = sumrssi = sumsqrssi = 0;
+            nrssi = sumrssi = sumsqrssi = rssimax = 0;
             thdUpd = ts_thdUpdNow;
             thdUpdCnt = 0;
 

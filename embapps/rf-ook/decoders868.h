@@ -316,8 +316,12 @@ public:
                     return -1;
                 break;
             }
-        } else if (width >= 1500 && pos >= 5)
+        } else if (width >= 1500 && pos >= 5) {
+            while (bits)
+                gotBit(0); // padding
+            reverseBits();
             return 1;
+        }
         else
             if (pos > 1)
                 return 1;
@@ -345,8 +349,10 @@ public:
                     ++flip;
                 else if (sw == 0)
                     ++flip;
-                else if (flip > 20)
+                else if (flip > 20) {
+                	gotBit(1);
                     state = OK;
+                }
                 else
                     return -1;
                 break;
@@ -358,6 +364,8 @@ public:
                 break;
             }
         } else if (width >= 1500 && pos >= 5) {
+            while (bits)
+                gotBit(0); // padding
             reverseBits();
             return 1;
         }
