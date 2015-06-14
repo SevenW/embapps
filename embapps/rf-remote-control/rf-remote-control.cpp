@@ -1,7 +1,7 @@
 //============================================================================
 // Name        : rf-remote-control.cpp
 // Author      : SevenWatt
-// Version     :
+// Version     : 1.0
 // Copyright   : sevenwatt.com (c) 2015
 // Description : Send commands to FS20 and KAKU
 //
@@ -315,8 +315,10 @@ int main() {
 	serial.init(115200);
 	for (int i = 0; i < 10000; ++i)
 		__ASM("");
-	printf("\n[rf-remote-control] dev %x node %d\n", devId, nodeId);
-	printf("rf-remote-control\n");
+	printf("\n[rf-remote-control] dev %x node %d\n\n", devId, nodeId);
+	printf("Remote control commands:\n");
+	printf("  <hchi>,<hclo>,<addr>,<cmd> f     - FS20 command (868 MHz)\n");
+	printf("  <addr>,<dev>,<on> k              - KAKU command (433 MHz)\n");
 
 	rf.init(nodeId, 42, 8684);
 	if (PACKET) {
