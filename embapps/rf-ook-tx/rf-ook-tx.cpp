@@ -164,6 +164,49 @@ static void fs20cmd(uint16_t house, uint8_t addr, uint8_t cmd) {
 	}
 }
 
+static void kakuSend(uint8_t addr, uint8_t device, uint8_t on) {
+    int cmd = 0x600 | ((device - 1) << 4) | ((addr - 1) & 0xF);
+    if (on)
+        cmd |= 0x800;
+    for (uint8_t i = 0; i < 4; ++i) {
+		startOOK(2667); //PACKET mode: 375us (2667bps) largest common divisor
+    	int sr = cmd;
+
+    	if (PACKET) {
+			for (uint8_t bit = 0; bit < 12; ++bit) {
+				addOutBit(1);
+				addOutBit(0);
+				addOutBit(0);
+				addOutBit(0);
+				//int on = bitRead(cmd, bit) ? 1125 : 375;
+				int on = sr & 1 ? 1125 : 375;
+				sr >>= 1;
+				ookPulse(on, 1500 - on);
+				uint8_t n = (sr & 1 ? 3 : 1);
+				for (uint8_t on = n; on > 0; on--)
+					addOutBit(1);
+				for (uint8_t off = 4-n; off > 0; off--)
+					addOutBit(0);
+			}
+			addOutBit(1);
+			addOutBit(0);
+    	} else {
+			for (uint8_t bit = 0; bit < 12; ++bit) {
+				ookPulse(375, 1125);
+				//int on = bitRead(cmd, bit) ? 1125 : 375;
+				int on = sr & 1 ? 1125 : 375;
+				sr >>= 1;
+				ookPulse(on, 1500 - on);
+			}
+		    ookPulse(375, 375);
+    	}
+		stopOOK();
+        delay = 1100; //11ms = 1100 beats of 10us
+		while (delay)
+			;
+    }
+}
+
 int main() {
 	// the device pin mapping is configured at run time based on its id
 	uint16_t devId = LPC_SYSCON->DEVICEID;
