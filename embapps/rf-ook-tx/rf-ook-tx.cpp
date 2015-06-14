@@ -8,7 +8,6 @@
 //============================================================================
 
 #include "chip.h"
-//#include "LPC8xx.h"
 #include "uart.h"
 #include <stdio.h>
 
@@ -75,21 +74,21 @@ static void ookPulse(int on, int off) {
 }
 
 //Packet mode OOK transmit buffer
-uint8_t txBuf[66];
+uint8_t ookBuf[66];
 uint8_t k = 0;
 uint8_t l = 0;
 
 //Packet mode OOK add one packet-bit to transmit buffer
 void addOutBit(uint8_t v) {
 	if (k <= 65) {
-		txBuf[k] |= (v & 1) << (7 - l);
+		ookBuf[k] |= (v & 1) << (7 - l);
 		if (++l == 8) {
 			l = 0;
 			k++;
 			if (k > 65) {
 				printf("FIFO size exceeded. Partial transmission\n");
 			} else {
-				txBuf[k] = 0;
+				ookBuf[k] = 0;
 			}
 		}
 	}
@@ -98,13 +97,13 @@ void addOutBit(uint8_t v) {
 //Packet mode OOK send complete packet
 void sendPacket() {
 	if (PACKET) {
-		//pad txBuf with OFF (=0) to fill last byte.
+		//pad ookBuf with OFF (=0) to fill last byte.
 		while (l)
 			addOutBit(0);
 //		for (uint8_t i = 0; i < k; ++i)
-//			printf("%02x", txBuf[i]);
+//			printf("%02x", ookBuf[i]);
 //		printf("\n");
-		rf.sendook(0, txBuf, k);
+		rf.sendook(0, ookBuf, k);
 	}
 }
 
@@ -129,10 +128,10 @@ static void fs20sendBits(uint16_t data, uint8_t bits) {
 
 void startOOK(uint32_t br) {
 	if (PACKET) {
-		//clear the txBuf
+		//clear the ookBuf
 		k = 0;
 		l = 0;
-		txBuf[0] = 0;
+		ookBuf[0] = 0;
 		rf.setBitrate(br);
 	} else {
 		enableOOK();
