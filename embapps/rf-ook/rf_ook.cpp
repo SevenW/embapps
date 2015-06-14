@@ -1,31 +1,39 @@
-// Report received data on the serial port.
-#define chThdYield() // FIXME still used in rf69.h
+//============================================================================
+// Name        : rf-ook.cpp
+// Author      : SevenWatt
+// Version     : 1.0
+// Copyright   : sevenwatt.com (c) 2015
+// Description : Receive and decode OOK signals from various sources
+//
+//============================================================================
 
 #include "chip.h"
-//#include "LPC8xx.h"
 #include "uart.h"
 #include <stdio.h>
 #include "spi.h"
 #include "rf69.h"
-#include "radio-ook.h"
-#include "decodeOOK_TEST.h"
+#include "rf69-ook.h"
+#include "decodeOOK.h"
+//#include "decodeOOK_TEST.h"
 
 //configuration items
-uint8_t DIO2 = 15; //GPIO pin DIO2(=DATA)
+uint8_t DIO2 = 15; //GPIO pin DIO2(=DATA), configured in main()
 
 //#define FREQ_BAND 433
 #define FREQ_BAND 868
 
 uint8_t fixthd = 60;
-//uint32_t frqkHz = 433920;
+#if FREQ_BAND == 434
+uint32_t frqkHz = 433920;
+#else
 uint32_t frqkHz = 868400;
-//uint32_t bitrate = 300000;
-uint32_t bitrate = 32768;
+#endif
+uint32_t bitrate = 32768; //max OOK 32768bps, max FSK 300000bps
 uint8_t bw = 16; //0=250kHz, 8=200kHz, 16=167kHz, 1=125kHz, 9=100kHz, 17=83kHz 2=63kHz, 10=50kHz
 
+//Configure the main heart beat to sample the RFM69 DATA pin
 const uint8_t tsample = 25; //us samples
 uint32_t samplesSec = 1000000/tsample;
-
 
 volatile uint32_t sampleTicks = 0;
 extern "C" void SysTick_Handler(void) {
@@ -55,7 +63,7 @@ WH1080DecoderV2a WH1080a;
 //VisonicDecoder viso;
 EMxDecoder emx;
 KSxDecoder ksx;
-FSxDecoder fsx;
+//FSxDecoder fsx;
 FSxDecoderA fsxa;
 //
 #endif
@@ -72,37 +80,38 @@ void reportOOK (const char* s, class DecodeOOK& decoder) {
 }
 
 void processBit(uint16_t pulse_dur, uint8_t signal) {
+#if FREQ_BAND == 434
+    if (kaku.nextPulse(pulse_dur, signal)) {
+        reportOOK("KAKU   ", kaku);
+    }
+    if (orscV1.nextPulse(pulse_dur, signal)) {
+        reportOOK("ORSCV1 ", orscV1);
+    }
+    if (ws249.nextPulse(pulse_dur, signal)) {
+        reportOOK("WS249  ", ws249);
+    }
+#else
 //	if (WH1080a.nextPulse(pulse_dur, signal)) {
 //		reportOOK("WH1080a", WH1080a);
-//		//set scope trigger
-//		//palWritePad(GPIOB, 4, 1);
 //	}
-    if (fsx.nextPulse(pulse_dur, signal)) {
-        reportOOK("FS20   ", fsx);
-        //set scope trigger
-        //palWritePad(GPIOB, 4, 1);
-    }
+//    if (fsx.nextPulse(pulse_dur, signal)) {
+//        reportOOK("FS20   ", fsx);
+//    }
     if (fsxa.nextPulse(pulse_dur, signal)) {
-        reportOOK("FS20A   ", fsxa);
-        //set scope trigger
-        //palWritePad(GPIOB, 4, 1);
+        reportOOK("FS20A  ", fsxa);
     }
-//    if (emx.nextPulse(pulse_dur, signal)) {
-//        reportOOK("EMx   ", emx);
-//        //set scope trigger
-//        //palWritePad(GPIOB, 4, 1);
-//    }
-//    if (ksx.nextPulse(pulse_dur, signal)) {
-//        reportOOK("KSx   ", ksx);
-//        //set scope trigger
-//        //palWritePad(GPIOB, 4, 1);
-//    }
+    if (emx.nextPulse(pulse_dur, signal)) {
+        reportOOK("EMx   ", emx);
+    }
+    if (ksx.nextPulse(pulse_dur, signal)) {
+        reportOOK("KSx   ", ksx);
+    }
+#endif
 }
 
 void receiveOOK() {
     //moving average buffer
-    //const uint8_t avg_len = 7;
-    const uint8_t avg_len = 1;
+    const uint8_t avg_len = 7;
     uint32_t filter = 0;
     uint32_t sig_mask = (1 << avg_len) - 1;
 
@@ -254,7 +263,6 @@ static void setMaxSpeed () {
     LPC_SYSCON->SYSAHBCLKDIV = SYSAHBCLKDIV_Val;
 }
 
-
 int main () {
     for (int i = 0; i <3000000; ++i) __ASM("");
     //setMaxSpeed();
@@ -332,7 +340,7 @@ int main () {
     printf("\n[rf_ook] dev %x node %d\n", devId, nodeId);
     printf("CoreClk %d, MainClk %d\n\n", SystemCoreClock, SystemCoreClock*LPC_SYSCON->SYSAHBCLKDIV);
 
-    rfa.init(nodeId, 42, 868400);
+    rfa.init(nodeId, 42, frqkHz);
 
     while(true) {
         receiveOOK();

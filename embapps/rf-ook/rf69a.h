@@ -5,9 +5,6 @@ class RF69A : public RF69<SPI> {
 public:
     void init (uint8_t id, uint8_t group, int freq);
     uint8_t readRSSI();
-    int16_t readAFC();
-    int16_t readFEI(bool start);
-    int readStatus();
     void setThd(uint8_t thd);
     void setBW(uint8_t bw);
     void setFrequency(uint32_t frq);
@@ -17,6 +14,9 @@ public:
     void DataModule(uint8_t module);
     void OOKthdMode(uint8_t thdmode);
     //void readAllRegs();
+    //int readStatus();
+    //int16_t readAFC();
+    //int16_t readFEI(bool start);
 
     uint8_t myGroup;
 
@@ -69,13 +69,8 @@ protected:
 static const uint8_t configRegsOOK [] = {
     0x01, 0x04, // OpMode = standby
     0x02, 0x68, // DataModul = conti mode, ook, no shaping
-    0x03, 0x7D, // BitRateMsb, 1000bps
-    0x04, 0x00, // BitRateLsb, divider = 32 MHz / 650
-    0x05, 0x01, // FdevMsb = 25 KHz
-    0x06, 0x99, // FdevLsb = 25 KHz
-    0x07, 0xD9, // FrfMsb, freq = 868.250 MHz
-    0x08, 0x13, // FrfMib, divider = 14221312
-    0x09, 0x00, // FrfLsb, step = 61.03515625
+    0x03, 0x03, // BitRateMsb, 32768bps
+    0x04, 0xD1, // BitRateLsb, divider = 32 MHz / 650
     0x0B, 0x20, // AfcCtrl, afclowbetaon
     0x18, 0x81, // LNA fixed highest gain, Z=200ohm
     0x19, 0x40, // RxBw DCC=4%, Man=00b Exp = 0 =>BWOOK=250.0kHz
@@ -87,8 +82,6 @@ static const uint8_t configRegsOOK [] = {
     0x26, 0x37, // Dio 5: ModeReady, CLKOUT = OFF
     0x29, 0xFF, // RssiThresh: lowest possible threshold to start receive
     0x2E, 0x00, // SyncConfig = sync off
-    0x3C, 0x8F, // FifoTresh, not empty, level 15
-    0x3D, 0x10, // PacketConfig2, interpkt = 1, autorxrestart off
     //0x58, 0x2D, // Sensitivity boost (TestLNA)
     0x6F, 0x20, // TestDagc ...
     0
@@ -99,7 +92,7 @@ void RF69A<SPI>::init (uint8_t id, uint8_t group, int freq) {
     RF69<SPI>::init(id, group, freq);
     this->configure(configRegsOOK);
     //clear AFC. Essential for wideband OOK signals. No other way to reset from SW.
-    this->writeReg(REG_AFCFEI, (1<<1));
+    this->writeReg(REG_AFCFEI, (1<<1)); //clear AFC
     //this->writeReg(REG_AFCFEI, this->readReg(REG_AFCFEI) | (1 << 1)); //does not work
     myGroup = group;
     this->setMode(MODE_RECEIVE);
@@ -120,64 +113,6 @@ uint8_t RF69A<SPI>::readRSSI() {
 }
 
 template< typename SPI >
-int16_t RF69A<SPI>::readFEI(bool start) {
-    int16_t fei = 0;
-      if (start)
-      {
-        this->writeReg(REG_AFCFEI, 1 << 5);
-        while ((this->readReg(REG_AFCFEI) & (1 << 6)) == 0x00); // Wait for RSSI_Ready
-      }
-    fei = this->readReg(REG_FEILSB);
-    fei |= (this->readReg(REG_FEIMSB) << 8);
-    return fei;
-}
-
-template< typename SPI >
-int16_t RF69A<SPI>::readAFC() {
-    int16_t afc = 0;
-    //  if (true)
-    //  {
-    //    //RSSI trigger not needed if DAGC is in continuous mode
-    //    writeReg(REG_RSSICONFIG, RF_RSSI_START);
-    //    while ((readReg(REG_RSSICONFIG) & RF_RSSI_DONE) == 0x00); // Wait for RSSI_Ready
-    //  }
-    afc = this->readReg(REG_AFCLSB);
-    afc |= (this->readReg(REG_AFCMSB) << 8);
-    //reset AFC
-//    if (true)
-//    {
-//        this->writeReg(REG_AFCFEI, (1<<1));
-//        //this->writeReg(REG_AFCFEI, this->readReg(REG_AFCFEI) | (1 << 1)); //does not work
-//        //while ((this->readReg(REG_AFCFEI) & (1 << 6)) == 0x00); // Wait for RSSI_Ready
-//    }
-
-    return afc;
-}
-
-template< typename SPI >
-int RF69A<SPI>::readStatus() {
-    switch (this->mode) {
-    case MODE_RECEIVE:
-    case MODE_TRANSMIT:
-        uint8_t f1 = readReg(REG_IRQFLAGS1);
-        uint8_t f2 = readReg(REG_IRQFLAGS2);
-        if (f1 & 0x08) {
-            //printf(BYTETOBINARYPATTERN, BYTETOBINARY(f1));
-            //printf("  ");
-            //printf(BYTETOBINARYPATTERN, BYTETOBINARY(f2));
-            //printf("  ");
-            //fixthd += 1;
-            //writeReg(0x1D, fixthd);
-            //printf("%02x %02x\r\n", fixthd, readRSSI());
-        }
-        break;
-    default:
-        break;
-    }
-    return 0;
-}
-
-template< typename SPI >
 void RF69A<SPI>::setThd (uint8_t thd) {
     this->writeReg(REG_OOKFIX, thd);
 }
@@ -187,7 +122,7 @@ void RF69A<SPI>::setBW (uint8_t bw) {
 }
 template< typename SPI >
 void RF69A<SPI>::setFrequency (uint32_t frq) {
-    this->writeReg(REG_AFCFEI, (1<<1));
+    this->writeReg(REG_AFCFEI, (1<<1)); //clear AFC
     RF69<SPI>::setFrequency(frq);
 
 //    // accept any frequency scale as input, including KHz and MHz
@@ -243,3 +178,60 @@ void RF69A<SPI>::OOKthdMode(uint8_t thdmode) {
 ////    }
 //    printf("\r\n");
 //}
+//
+//template< typename SPI >
+//int RF69A<SPI>::readStatus() {
+//    switch (this->mode) {
+//    case MODE_RECEIVE:
+//    case MODE_TRANSMIT:
+//        uint8_t f1 = readReg(REG_IRQFLAGS1);
+//        uint8_t f2 = readReg(REG_IRQFLAGS2);
+//        if (f1 & 0x08) {
+//            //printf(BYTETOBINARYPATTERN, BYTETOBINARY(f1));
+//            //printf("  ");
+//            //printf(BYTETOBINARYPATTERN, BYTETOBINARY(f2));
+//            //printf("  ");
+//            //fixthd += 1;
+//            //writeReg(0x1D, fixthd);
+//            //printf("%02x %02x\r\n", fixthd, readRSSI());
+//        }
+//        break;
+//    default:
+//        break;
+//    }
+//    return 0;
+//}
+//template< typename SPI >
+//int16_t RF69A<SPI>::readFEI(bool start) {
+//    int16_t fei = 0;
+//      if (start)
+//      {
+//        this->writeReg(REG_AFCFEI, 1 << 5);
+//        while ((this->readReg(REG_AFCFEI) & (1 << 6)) == 0x00); // Wait for RSSI_Ready
+//      }
+//    fei = this->readReg(REG_FEILSB);
+//    fei |= (this->readReg(REG_FEIMSB) << 8);
+//    return fei;
+//}
+//
+//template< typename SPI >
+//int16_t RF69A<SPI>::readAFC() {
+//    int16_t afc = 0;
+//    //  if (true)
+//    //  {
+//    //    //RSSI trigger not needed if DAGC is in continuous mode
+//    //    writeReg(REG_RSSICONFIG, RF_RSSI_START);
+//    //    while ((readReg(REG_RSSICONFIG) & RF_RSSI_DONE) == 0x00); // Wait for RSSI_Ready
+//    //  }
+//    afc = this->readReg(REG_AFCLSB);
+//    afc |= (this->readReg(REG_AFCMSB) << 8);
+//    //reset AFC
+////    if (true)
+////    {
+////        this->writeReg(REG_AFCFEI, (1<<1)); //clear AFC
+////        //this->writeReg(REG_AFCFEI, this->readReg(REG_AFCFEI) | (1 << 1)); //does not work
+////        //while ((this->readReg(REG_AFCFEI) & (1 << 6)) == 0x00); // Wait for RSSI_Ready
+////    }
+//    return afc;
+//}
+

@@ -14,7 +14,7 @@ extern "C" void SysTick_Handler(void) {
 
 #include "spi.h"
 #include "rf69.h"
-#include "radio-ook.h"
+#include "rf69-ook.h"
 #include "decodeOOK_TEST.h"
 
 uint8_t DIO2 = 15; //GPIO pin DIO2(=DATA)
