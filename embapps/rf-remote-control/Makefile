@@ -9,7 +9,6 @@ OBJS = rf-remote-control.o system_LPC8xx.o gcc_startup_lpc8xx.o \
 
 default: isp
 
-#LIBDIR = C:\Github\embello\lib
 LIBDIR = ../../embello/lib
 SHARED = $(LIBDIR)/sys-none
 include $(SHARED)/rules.mk
