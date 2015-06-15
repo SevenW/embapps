@@ -171,22 +171,18 @@ static void kakuSend(uint8_t addr, uint8_t device, uint8_t on) {
     for (uint8_t i = 0; i < 4; ++i) {
 		startOOK(2667); //PACKET mode: 375us (2667bps) largest common divisor
     	int sr = cmd;
-
     	if (PACKET) {
 			for (uint8_t bit = 0; bit < 12; ++bit) {
 				addOutBit(1);
 				addOutBit(0);
 				addOutBit(0);
 				addOutBit(0);
-				//int on = bitRead(cmd, bit) ? 1125 : 375;
-				int on = sr & 1 ? 1125 : 375;
-				sr >>= 1;
-				ookPulse(on, 1500 - on);
 				uint8_t n = (sr & 1 ? 3 : 1);
 				for (uint8_t on = n; on > 0; on--)
 					addOutBit(1);
 				for (uint8_t off = 4-n; off > 0; off--)
 					addOutBit(0);
+				sr >>= 1;
 			}
 			addOutBit(1);
 			addOutBit(0);
