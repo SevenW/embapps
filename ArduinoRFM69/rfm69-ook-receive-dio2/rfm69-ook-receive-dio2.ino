@@ -13,7 +13,7 @@
 
 #define FREQ_BAND 868 //868 or 433
 #define SERIAL_BAUD 57600
-#define STATLOG 1 //0=no statistics logging 1=statistics logging
+#define STATLOG 0 //0=no statistics logging 1=statistics logging
 
 #if FREQ_BAND == 433
 #define RF12_BAND RF12_433MHZ
@@ -122,15 +122,15 @@ void reportOOK (const char* s, class DecodeOOK& decoder) {
 
 #if FREQ_BAND == 433
 void processBit(uint16_t pulse_dur, uint8_t signal, uint8_t rssi) {
-//  if (rssi) {
-//    if (signal) {
-//      rssi_buf_i += 2;
-//      rssi_buf_i &= (RSSI_BUF_SIZE - 2);
-//      rssi_buf[rssi_buf_i] = rssi;
-//    } else {
-//      rssi_buf[rssi_buf_i + 1] = rssi;
-//    }
-//  }
+  //  if (rssi) {
+  //    if (signal) {
+  //      rssi_buf_i += 2;
+  //      rssi_buf_i &= (RSSI_BUF_SIZE - 2);
+  //      rssi_buf[rssi_buf_i] = rssi;
+  //    } else {
+  //      rssi_buf[rssi_buf_i + 1] = rssi;
+  //    }
+  //  }
   //Serial.print( "\r\nf=%3d.%3dkHz BW-idx=%2d, OOKTHd = %d - ", frqkHz/1000, frqkHz%1000, bw, fixthd);
   if (orscV1.nextPulse(pulse_dur, signal)) {
     reportOOK("ORSCV1 ", orscV1);
@@ -149,15 +149,15 @@ void processBit(uint16_t pulse_dur, uint8_t signal, uint8_t rssi) {
 }
 #else
 void processBit(uint16_t pulse_dur, uint8_t signal, uint8_t rssi) {
-//  if (rssi) {
-//    if (signal) {
-//      rssi_buf_i += 2;
-//      rssi_buf_i &= (RSSI_BUF_SIZE - 2);
-//      rssi_buf[rssi_buf_i] = rssi;
-//    } else {
-//      rssi_buf[rssi_buf_i + 1] = rssi;
-//    }
-//  }
+  //  if (rssi) {
+  //    if (signal) {
+  //      rssi_buf_i += 2;
+  //      rssi_buf_i &= (RSSI_BUF_SIZE - 2);
+  //      rssi_buf[rssi_buf_i] = rssi;
+  //    } else {
+  //      rssi_buf[rssi_buf_i + 1] = rssi;
+  //    }
+  //  }
   //Serial.print( "\r\nf=%3d.%3dkHz BW-idx=%2d, OOKTHd = %d - ", frqkHz/1000, frqkHz%1000, bw, fixthd);
   if (emx.nextPulse(pulse_dur, signal)) {
     reportOOK("EMX  ", emx);
@@ -222,10 +222,10 @@ static void receiveOOK() {
 
   //Calculate RSSI during OOK pulse train.
   uint8_t last_steady_rssi = 0;
-//  uint8_t rssi_q_off = 2; //stay >75us away from flip. 2 samples.
-//  uint8_t rssi_q_len = avg_len + rssi_q_off + 1;
-//  uint8_t rssi_q[rssi_q_len];
-//  uint8_t rssi_qi = 0;
+  //  uint8_t rssi_q_off = 2; //stay >75us away from flip. 2 samples.
+  //  uint8_t rssi_q_len = avg_len + rssi_q_off + 1;
+  //  uint8_t rssi_q[rssi_q_len];
+  //  uint8_t rssi_qi = 0;
 
   while (true) {
     //rssi = ~rf.readRSSI();
@@ -239,28 +239,28 @@ static void receiveOOK() {
       if (rssi > rssimax) rssimax = rssi;
     }
 
-//    //emulate PEAK-mode OOK threshold
-//    decthdcnt++;
-//    if (((decthdcnt & 3) == 0) and (slicethd > fixthd)) {
-//      //decrement slicethd every 4th poll (~280us) with 0.5dB
-//      slicethd--;
-//    }
-//    prev_thd = slicethd;
-//    if (rssi > slicethd + 12) {
-//      //deal with outlier rssi?
-//      slicethd = rssi - 12;
-//      //limit printing
-//      if (slicethd > prev_thd + 12) {
-//        //Serial.print( "PEAK-THD: set %d\r\n", slicethd);
-//      }
-//      if (rssi > 200) {
-//        slicethd = 188;
-//        Serial.print(F("PEAK-THD: outlier rssi "));
-//        Serial.println(rssi);
-//      }
-//      if (slicethd < fixthd) slicethd = fixthd;
-//    }
-//    if (slicethd > max_thd) max_thd = slicethd;
+    //    //emulate PEAK-mode OOK threshold
+    //    decthdcnt++;
+    //    if (((decthdcnt & 3) == 0) and (slicethd > fixthd)) {
+    //      //decrement slicethd every 4th poll (~280us) with 0.5dB
+    //      slicethd--;
+    //    }
+    //    prev_thd = slicethd;
+    //    if (rssi > slicethd + 12) {
+    //      //deal with outlier rssi?
+    //      slicethd = rssi - 12;
+    //      //limit printing
+    //      if (slicethd > prev_thd + 12) {
+    //        //Serial.print( "PEAK-THD: set %d\r\n", slicethd);
+    //      }
+    //      if (rssi > 200) {
+    //        slicethd = 188;
+    //        Serial.print(F("PEAK-THD: outlier rssi "));
+    //        Serial.println(rssi);
+    //      }
+    //      if (slicethd < fixthd) slicethd = fixthd;
+    //    }
+    //    if (slicethd > max_thd) max_thd = slicethd;
 
     uint8_t data_in = bitRead(RF69_RX_PIN, RF69_RX_DATA);
     //uint8_t data_in = rssi > slicethd;
@@ -276,15 +276,15 @@ static void receiveOOK() {
     //filtered DATA to scope
     //palWritePad(GPIOB, 5, (data_out & 0x01));
 
-//    //delay rssi to sync with moving average data
-//    //delay: half the average buffer + 50-75us further back (3 samples)
-//    uint8_t j = rssi_qi + rssi_q_len - (avg_len >> 1) - rssi_q_off;
-//    if (j >= rssi_q_len)
-//      j -= rssi_q_len;
-//    uint8_t delayed_rssi = rssi_q[j];
-//    rssi_q[rssi_qi++] = rssi;
-//    if (rssi_qi >= rssi_q_len)
-//      rssi_qi = 0;
+    //    //delay rssi to sync with moving average data
+    //    //delay: half the average buffer + 50-75us further back (3 samples)
+    //    uint8_t j = rssi_qi + rssi_q_len - (avg_len >> 1) - rssi_q_off;
+    //    if (j >= rssi_q_len)
+    //      j -= rssi_q_len;
+    //    uint8_t delayed_rssi = rssi_q[j];
+    //    rssi_q[rssi_qi++] = rssi;
+    //    if (rssi_qi >= rssi_q_len)
+    //      rssi_qi = 0;
 
     uint32_t ts_thdUpdNow = millis();
 
@@ -396,11 +396,11 @@ void setup() {
   //same as above?
   RF69_RX_DDR &= ~_BV(RF69_RX_DATA);
   detachInterrupt(RF69_RX_EXTINT);
-  
+
   rf12_initialize(11, RF12_BAND, 42, 1600);// calls rf69_initialize()
   //setup for OOK
   rf.init(11, 42, frqkHz);
-  
+
 }
 
 void loop() {

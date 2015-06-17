@@ -3,7 +3,7 @@
 
 /// This is the general base class for implementing OOK decoders.
 class DecodeOOK {
-protected:
+  protected:
     uint8_t total_bits, bits, flip, state, pos, data[25];
     // the following fields are used to deal with duplicate packets
     uint16_t lastCrc, lastTime;
@@ -18,57 +18,57 @@ protected:
 
     // add one bit to the packet data buffer
     virtual void gotBit (int8_t value) {
-        total_bits++;
-        uint8_t *ptr = data + pos;
-        *ptr = (*ptr >> 1) | (value << 7);
+      total_bits++;
+      uint8_t *ptr = data + pos;
+      *ptr = (*ptr >> 1) | (value << 7);
 
-        if (++bits >= 8) {
-            bits = 0;
-            if (++pos >= sizeof data) {
-                resetDecoder();
-                return;
-            }
+      if (++bits >= 8) {
+        bits = 0;
+        if (++pos >= sizeof data) {
+          resetDecoder();
+          return;
         }
-        state = OK;
+      }
+      state = OK;
     }
 
     // store a bit using Manchester encoding
     void manchester (int8_t value) {
-        flip ^= value; // manchester code, long pulse flips the bit
-        gotBit(flip);
+      flip ^= value; // manchester code, long pulse flips the bit
+      gotBit(flip);
     }
 
     // move bits to the front so that all the bits are aligned to the end
-    void alignTail (uint8_t max =0) {
-        // align bits
-        if (bits != 0) {
-            data[pos] >>= 8 - bits;
-            for (uint8_t i = 0; i < pos; ++i)
-                data[i] = (data[i] >> bits) | (data[i+1] << (8 - bits));
-            bits = 0;
-        }
-        // optionally shift uint8_ts down if there are too many of 'em
-        if (max > 0 && pos > max) {
-            uint8_t n = pos - max;
-            pos = max;
-            for (uint8_t i = 0; i < pos; ++i)
-                data[i] = data[i+n];
-        }
+    void alignTail (uint8_t max = 0) {
+      // align bits
+      if (bits != 0) {
+        data[pos] >>= 8 - bits;
+        for (uint8_t i = 0; i < pos; ++i)
+          data[i] = (data[i] >> bits) | (data[i + 1] << (8 - bits));
+        bits = 0;
+      }
+      // optionally shift uint8_ts down if there are too many of 'em
+      if (max > 0 && pos > max) {
+        uint8_t n = pos - max;
+        pos = max;
+        for (uint8_t i = 0; i < pos; ++i)
+          data[i] = data[i + n];
+      }
     }
 
     void reverseBits () {
-        for (uint8_t i = 0; i < pos; ++i) {
-            uint8_t b = data[i];
-            for (uint8_t j = 0; j < 8; ++j) {
-                data[i] = (data[i] << 1) | (b & 1);
-                b >>= 1;
-            }
+      for (uint8_t i = 0; i < pos; ++i) {
+        uint8_t b = data[i];
+        for (uint8_t j = 0; j < 8; ++j) {
+          data[i] = (data[i] << 1) | (b & 1);
+          b >>= 1;
         }
+      }
     }
 
     void reverseNibbles () {
-        for (uint8_t i = 0; i < pos; ++i)
-            data[i] = (data[i] << 4) | (data[i] >> 4);
+      for (uint8_t i = 0; i < pos; ++i)
+        data[i] = (data[i] << 4) | (data[i] >> 4);
     }
 
     //  bool checkRepeats () {
@@ -89,45 +89,47 @@ protected:
     //  }
 
     bool checkRepeats () {
-        return 1;
+      return 1;
     }
 
-public:
+  public:
     enum { UNKNOWN, T0, T1, T2, T3, OK, DONE };
 
-    DecodeOOK (uint8_t gap =5, uint8_t count =0)
-    : lastCrc (0), lastTime (0), repeats (0), minGap (gap), minCount (count)
-    { resetDecoder(); }
+    DecodeOOK (uint8_t gap = 5, uint8_t count = 0)
+      : lastCrc (0), lastTime (0), repeats (0), minGap (gap), minCount (count)
+    {
+      resetDecoder();
+    }
 
     virtual bool nextPulse (uint16_t width) {
-        if (state != DONE)
-            switch (decode(width)) {
-            case -1: // decoding failed
-                resetDecoder();
-                break;
-            case 1: // decoding finished
-                while (bits)
-                    gotBit(0); // padding
-                state = checkRepeats() ? DONE : UNKNOWN;
-                break;
-            }
-        return state == DONE;
+      if (state != DONE)
+        switch (decode(width)) {
+          case -1: // decoding failed
+            resetDecoder();
+            break;
+          case 1: // decoding finished
+            while (bits)
+              gotBit(0); // padding
+            state = checkRepeats() ? DONE : UNKNOWN;
+            break;
+        }
+      return state == DONE;
     }
 
     virtual bool nextPulse (uint16_t width, uint8_t signal) {
-        last_signal = signal;
-        return DecodeOOK::nextPulse(width);
+      last_signal = signal;
+      return DecodeOOK::nextPulse(width);
     }
 
     const uint8_t* getData (uint8_t& count) const {
-        count = pos;
-        return data;
+      count = pos;
+      return data;
     }
 
     virtual void resetDecoder ()
     {
-        total_bits = bits = pos = flip = 0;
-        state = UNKNOWN;
+      total_bits = bits = pos = flip = 0;
+      state = UNKNOWN;
     }
 };
 
