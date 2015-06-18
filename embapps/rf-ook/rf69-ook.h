@@ -74,7 +74,7 @@ static const uint8_t configRegsOOK [] = {
     0x0B, 0x20, // AfcCtrl, afclowbetaon
     0x18, 0x81, // LNA fixed highest gain, Z=200ohm
     0x19, 0x40, // RxBw DCC=4%, Man=00b Exp = 0 =>BWOOK=250.0kHz
-    0x1B, 0x40, // OOK peak, 0.5dB once/chip
+    0x1B, 0x43, // OOK peak, 0.5dB once/8 chips (slowest)
     0x1C, 0x80, // OOK avg thresh /4pi
     0x1D, 0x38, // OOK fixed thresh
     0x1E, 0x00, // No auto AFC
