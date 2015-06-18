@@ -41,8 +41,7 @@ class RF69A {
       REG_NODEADDR      = 0x39,
       REG_BCASTADDR     = 0x3A,
       REG_PKTCONFIG2    = 0x3D,
-        REG_AESKEYMSB     = 0x3E,
-
+      REG_AESKEYMSB     = 0x3E,
 
       REG_TEMP1         = 0x4E,
       REG_TEMP2         = 0x4F,
