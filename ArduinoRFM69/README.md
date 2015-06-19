@@ -7,6 +7,9 @@ The following sketches only require standard SPI wiring of the RFM69, and no add
 rfm69-RF12demo-ook-TX is the classic RF12demo sketch that can send KAKU and FS20 commands.
 rfm69-ook-receive-rssi can receive various OOK signals by sampling the RSSI signal register.
 
+The next sketch is using the DIO2/DATA line, connected to D3=INT0, for example by closing the soldering bridge in the JeeLinkV3C
+rfm69-ook-receive-dio2
+
 Supported decoders can be found in the decoders433.h and decoders868.h. From more backgound see http://jeelabs.org/2011/02/03/ook-relay-revisited-2/
 
 more examples using the DIO2 line can be expected. Also a sketch as ookReleay2, that relays received OOK signals through standard JeeLib RF12 packets.
