@@ -214,6 +214,7 @@ class VisonicDecoder : public DecodeOOK {
 class EMxDecoder : public DecodeOOK {
   public:
     EMxDecoder () : DecodeOOK (30) {} // ignore packets repeated within 3 sec
+    EMxDecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb, 30) {} // ignore packets repeated within 3 sec
 
     // see also http://fhz4linux.info/tiki-index.php?page=EM+Protocol
     virtual int8_t decode (uint16_t width) {
@@ -288,6 +289,7 @@ class KSxDecoder : public DecodeOOK {
 class FSxDecoder : public DecodeOOK {
   public:
     FSxDecoder () {}
+    FSxDecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
 
     // see also http://fhz4linux.info/tiki-index.php?page=FS20%20Protocol
     virtual int8_t decode (uint16_t width) {

@@ -24,6 +24,13 @@ uint8_t fixthd = 0x10;
 uint32_t bitrate = 32768;
 uint8_t bw = 16; //0=250kHz, 8=200kHz, 16=167kHz, 1=125kHz, 9=100kHz, 17=83kHz 2=63kHz, 10=50kHz
 
+const uint8_t max_decoders = 4;
+DecodeOOK* decoders[max_decoders] = {NULL};
+uint8_t di = 0;
+
+void printOOK (class DecodeOOK* decoder);
+
+
 #if FREQ_BAND == 433
 //433MHz
 #include "decoders433.h"
@@ -41,11 +48,15 @@ KakuDecoder kaku;
 //868MHz
 #include "decoders868.h"
 //VisonicDecoder viso;
-EMxDecoder emx;
+EMxDecoder emx(2, "EMX  ", printOOK);
 //KSxDecoder ksx;
-FSxDecoder fsx;
+FSxDecoder fsx(4, "FS20x", printOOK);
 //FSxDecoderA fsxa;
 //
+void setupDecoders() {
+	decoders[di++]=&emx;
+	decoders[di++]=&fsx;
+}
 #endif
 
 // End config items --------------------------------------------------------
@@ -115,6 +126,29 @@ void reportOOK (const char* s, class DecodeOOK& decoder) {
   decoder.resetDecoder();
 }
 
+void printOOK (class DecodeOOK* decoder) {
+  uint8_t pos;
+  const uint8_t* data = decoder->getData(pos);
+  //Serial.println("");
+  //Serial.print(hour());
+  //printDigits(minute());
+  //printDigits(second());
+  //Serial.print(" ");
+  //int8_t textbuf[25];
+  //rf12_settings_text(textbuf);
+  //Serial.print(textbuf);
+  //Serial.print(' ');
+  Serial.print(decoder->tag);
+  Serial.print(' ');
+  for (uint8_t i = 0; i < pos; ++i) {
+    printHex(data[i]);
+  }
+  printRSSI();
+  Serial.println();
+
+  decoder->resetDecoder();
+}
+
 #if FREQ_BAND == 433
 void processBit(uint16_t pulse_dur, uint8_t signal, uint8_t rssi) {
   if (rssi) {
@@ -126,20 +160,24 @@ void processBit(uint16_t pulse_dur, uint8_t signal, uint8_t rssi) {
       rssi_buf[rssi_buf_i + 1] = rssi;
     }
   }
-  //Serial.print( "\r\nf=%3d.%3dkHz BW-idx=%2d, OOKTHd = %d - ", frqkHz/1000, frqkHz%1000, bw, fixthd);
-  if (orscV1.nextPulse(pulse_dur, signal)) {
-    reportOOK("ORSCV1 ", orscV1);
-    //set scope trigger
-    //palWritePad(GPIOB, 4, 1);
-  }
-  if (kaku.nextPulse(pulse_dur, signal))
-    reportOOK("kaku", kaku);
-  if (ws249.nextPulse(pulse_dur, signal))
-    reportOOK("WS249", ws249);
-  if (phi.nextPulse(pulse_dur, signal)) {
-    reportOOK("phi", phi);
-    //set scope trigger
-    //palWritePad(GPIOB, 4, 1);
+//  //Serial.print( "\r\nf=%3d.%3dkHz BW-idx=%2d, OOKTHd = %d - ", frqkHz/1000, frqkHz%1000, bw, fixthd);
+//  if (orscV1.nextPulse(pulse_dur, signal)) {
+//    reportOOK("ORSCV1 ", orscV1);
+//    //set scope trigger
+//    //palWritePad(GPIOB, 4, 1);
+//  }
+//  if (kaku.nextPulse(pulse_dur, signal))
+//    reportOOK("kaku", kaku);
+//  if (ws249.nextPulse(pulse_dur, signal))
+//    reportOOK("WS249", ws249);
+//  if (phi.nextPulse(pulse_dur, signal)) {
+//    reportOOK("phi", phi);
+//    //set scope trigger
+//    //palWritePad(GPIOB, 4, 1);
+//  }
+  for(uint8_t i=0; decoders[i]; i++) {
+    if (decoders[i]->nextPulse(pulse_dur, signal))
+      decoders[i]->decoded();
   }
 }
 #else
@@ -153,22 +191,26 @@ void processBit(uint16_t pulse_dur, uint8_t signal, uint8_t rssi) {
       rssi_buf[rssi_buf_i + 1] = rssi;
     }
   }
-  //Serial.print( "\r\nf=%3d.%3dkHz BW-idx=%2d, OOKTHd = %d - ", frqkHz/1000, frqkHz%1000, bw, fixthd);
-  if (emx.nextPulse(pulse_dur, signal)) {
-    reportOOK("EMX  ", emx);
-    //set scope trigger
-    //palWritePad(GPIOB, 4, 1);
+//  //Serial.print( "\r\nf=%3d.%3dkHz BW-idx=%2d, OOKTHd = %d - ", frqkHz/1000, frqkHz%1000, bw, fixthd);
+//  if (emx.nextPulse(pulse_dur, signal)) {
+//    reportOOK("EMX  ", emx);
+//    //set scope trigger
+//    //palWritePad(GPIOB, 4, 1);
+//  }
+//  if (fsx.nextPulse(pulse_dur, signal)) {
+//    reportOOK("FS20 ", fsx);
+//    //set scope trigger
+//    //palWritePad(GPIOB, 4, 1);
+//  }
+//  //  if (fsxa.nextPulse(pulse_dur, signal)) {
+//  //    reportOOK("FS20A", fsxa);
+//  //    //set scope trigger
+//  //    //palWritePad(GPIOB, 4, 1);
+//  //  }
+  for(uint8_t i=0; decoders[i]; i++) {
+    if (decoders[i]->nextPulse(pulse_dur, signal))
+      decoders[i]->decoded(decoders[i]);
   }
-  if (fsx.nextPulse(pulse_dur, signal)) {
-    reportOOK("FS20 ", fsx);
-    //set scope trigger
-    //palWritePad(GPIOB, 4, 1);
-  }
-  //  if (fsxa.nextPulse(pulse_dur, signal)) {
-  //    reportOOK("FS20A", fsxa);
-  //    //set scope trigger
-  //    //palWritePad(GPIOB, 4, 1);
-  //  }
 }
 #endif
 
@@ -381,6 +423,8 @@ static void receiveOOK() {
 void setup() {
   Serial.begin(SERIAL_BAUD);
   Serial.print(F("\r\n[OOK-RX-rssi]\r\n"));
+  setupDecoders();
+  Serial.print(decoders[0]->tag);
   rf12_initialize(11, RF12_BAND, 42, 1600);// calls rf69_initialize()
   //setup for OOK
   rf.init(11, 42, frqkHz);
