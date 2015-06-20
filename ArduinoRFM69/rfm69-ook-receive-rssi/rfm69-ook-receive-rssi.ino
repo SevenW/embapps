@@ -30,28 +30,38 @@ uint8_t di = 0;
 
 void printOOK (class DecodeOOK* decoder);
 
-
 #if FREQ_BAND == 433
 //433MHz
 #include "decoders433.h"
-WS249 ws249;
-Philips phi;
-OregonDecoderV1 orscV1;
-//OregonDecoderV2 orscV2;
-//OregonDecoderV3 orscV3;
-//CrestaDecoder cres;
-KakuDecoder kaku;
-//KakuADecoder kakuA;
-//XrfDecoder xrf;
-//HezDecoder hez;
+WS249 ws249(20, "WS249", printOOK);
+Philips phi(21, "PHI  ", printOOK);
+OregonDecoderV1 orscV1(22, "ORSV1", printOOK);
+//OregonDecoderV2 orscV2(5, "ORSV2", printOOK);
+//OregonDecoderV3 orscV3(23, "ORSV3", printOOK);
+//CrestaDecoder cres(6, "CRES ", printOOK);
+KakuDecoder kaku(7, "KAKU ", printOOK);
+//KakuADecoder kakuA(14, "KAKUA", printOOK);
+//XrfDecoder xrf(8, "XRF", printOOK);
+//HezDecoder hez(9, "HEZ  ", printOOK);
+//10, "ELRO",
+//11, "FMGO", 
+//12, "SMK", 
+//13, "BYR", 
+void setupDecoders() {
+  decoders[di++]=&ws249;
+  decoders[di++]=&phi;
+  decoders[di++]=&orscV1;
+  decoders[di++]=&kaku;
+}
+
 #else
 //868MHz
 #include "decoders868.h"
-//VisonicDecoder viso;
-EMxDecoder emx(2, "EMX  ", printOOK);
-//KSxDecoder ksx;
-FSxDecoder fsx(4, "FS20x", printOOK);
-//FSxDecoderA fsxa;
+//VisonicDecoder viso(1, "VISO  ", printOOK);
+EMxDecoder 		emx(2, "EMX  ", printOOK);
+//KSxDecoder	ksx(3, "KSX  ", printOOK);
+FSxDecoder 		fsx(4, "FS20 ", printOOK);
+//FSxDecoderA 	fsxa(44, "FS20A  ", printOOK);
 //
 void setupDecoders() {
 	decoders[di++]=&emx;
@@ -103,29 +113,6 @@ void printRSSI() {
   Serial.print(")");
 }
 
-void reportOOK (const char* s, class DecodeOOK& decoder) {
-  uint8_t pos;
-  const uint8_t* data = decoder.getData(pos);
-  //Serial.println("");
-  //Serial.print(hour());
-  //printDigits(minute());
-  //printDigits(second());
-  //Serial.print(" ");
-  //int8_t textbuf[25];
-  //rf12_settings_text(textbuf);
-  //Serial.print(textbuf);
-  //Serial.print(' ');
-  Serial.print(s);
-  Serial.print(' ');
-  for (uint8_t i = 0; i < pos; ++i) {
-    printHex(data[i]);
-  }
-  printRSSI();
-  Serial.println();
-
-  decoder.resetDecoder();
-}
-
 void printOOK (class DecodeOOK* decoder) {
   uint8_t pos;
   const uint8_t* data = decoder->getData(pos);
@@ -160,21 +147,6 @@ void processBit(uint16_t pulse_dur, uint8_t signal, uint8_t rssi) {
       rssi_buf[rssi_buf_i + 1] = rssi;
     }
   }
-//  //Serial.print( "\r\nf=%3d.%3dkHz BW-idx=%2d, OOKTHd = %d - ", frqkHz/1000, frqkHz%1000, bw, fixthd);
-//  if (orscV1.nextPulse(pulse_dur, signal)) {
-//    reportOOK("ORSCV1 ", orscV1);
-//    //set scope trigger
-//    //palWritePad(GPIOB, 4, 1);
-//  }
-//  if (kaku.nextPulse(pulse_dur, signal))
-//    reportOOK("kaku", kaku);
-//  if (ws249.nextPulse(pulse_dur, signal))
-//    reportOOK("WS249", ws249);
-//  if (phi.nextPulse(pulse_dur, signal)) {
-//    reportOOK("phi", phi);
-//    //set scope trigger
-//    //palWritePad(GPIOB, 4, 1);
-//  }
   for(uint8_t i=0; decoders[i]; i++) {
     if (decoders[i]->nextPulse(pulse_dur, signal))
       decoders[i]->decoded();
@@ -191,22 +163,6 @@ void processBit(uint16_t pulse_dur, uint8_t signal, uint8_t rssi) {
       rssi_buf[rssi_buf_i + 1] = rssi;
     }
   }
-//  //Serial.print( "\r\nf=%3d.%3dkHz BW-idx=%2d, OOKTHd = %d - ", frqkHz/1000, frqkHz%1000, bw, fixthd);
-//  if (emx.nextPulse(pulse_dur, signal)) {
-//    reportOOK("EMX  ", emx);
-//    //set scope trigger
-//    //palWritePad(GPIOB, 4, 1);
-//  }
-//  if (fsx.nextPulse(pulse_dur, signal)) {
-//    reportOOK("FS20 ", fsx);
-//    //set scope trigger
-//    //palWritePad(GPIOB, 4, 1);
-//  }
-//  //  if (fsxa.nextPulse(pulse_dur, signal)) {
-//  //    reportOOK("FS20A", fsxa);
-//  //    //set scope trigger
-//  //    //palWritePad(GPIOB, 4, 1);
-//  //  }
   for(uint8_t i=0; decoders[i]; i++) {
     if (decoders[i]->nextPulse(pulse_dur, signal))
       decoders[i]->decoded(decoders[i]);
