@@ -14,6 +14,9 @@ class RF69A {
     void DataModule(uint8_t module);
     void OOKthdMode(uint8_t thdmode);
     void receiveOOK_forever(ooktrans_cb processBit);
+	void sendook(uint8_t header, const void* ptr, int len);
+	void init_transmit(uint8_t band);
+	void exit_transmit();
     //void readAllRegs();
     //int readStatus();
 
@@ -38,8 +41,12 @@ class RF69A {
       REG_RSSIVALUE     = 0x24,
       REG_IRQFLAGS1     = 0x27,
       REG_IRQFLAGS2     = 0x28,
+      REG_PREAMPSIZE    = 0x2D,
+      REG_SYNCCONFIG    = 0x2E,
       REG_SYNCVALUE1    = 0x2F,
       REG_SYNCVALUE2    = 0x30,
+      REG_PKTCONFIG1    = 0x37,
+      REG_PAYLOADLEN    = 0x38,
       REG_NODEADDR      = 0x39,
       REG_BCASTADDR     = 0x3A,
       REG_PKTCONFIG2    = 0x3D,
@@ -49,7 +56,8 @@ class RF69A {
       REG_TEMP2         = 0x4F,
 
       MODE_SLEEP        = 0 << 2,
-      MODE_TRANSMIT     = 3 << 2,
+      MODE_STANDBY      = 1 << 2,
+      MODE_TRANSMITTER  = 3 << 2,
       MODE_RECEIVE      = 4 << 2,
 
       IRQ1_MODEREADY    = 1 << 7,
@@ -396,7 +404,47 @@ void RF69A::receiveOOK_forever(ooktrans_cb processBit) {
   return;
 }
 
+void RF69A::init_transmit(uint8_t band) {
+  writeReg(REG_OPMODE, 0x00);         // OpMode = sleep
+  writeReg(REG_DATAMOD, 0x08);        // DataModul = packet mode, OOK
+  writeReg(REG_PREAMPSIZE, 0x00);     // PreambleSize = 0 NO PREAMBLE
+  writeReg(REG_SYNCCONFIG, 0x00);     // SyncConfig = sync OFF
+  writeReg(REG_PKTCONFIG1, 0x80);     // PacketConfig1 = variable length, advanced items OFF
+  writeReg(REG_PAYLOADLEN, 0x00);     // PayloadLength = 0, unlimited
+  if (band == 0 /*RF12_433MHZ*/) {
+    setFrequency(434920);
+    setBitrate(2667);
+  } else {
+    setFrequency(868400);
+    setBitrate(5000);
+  }
+}
 
+void RF69A::exit_transmit() {
+  //Registers that do not get reset by reinitialization
+  writeReg(REG_PREAMPSIZE, 0x03);     // PreambleSize = 3 (RFM69 default)
+  //rf12_configSilent();
+}
+
+void RF69A::sendook(uint8_t header, const void* ptr, int len) {
+  //setMode(MODE_TRANSMITTER);
+
+  //write 8 bits OFF to start with
+  writeReg(REG_FIFO, 0);
+  for (int i = 0; i < len; ++i)
+    writeReg(REG_FIFO, ((const uint8_t*) ptr)[i]);
+  //  for (int i = 0; i < len; ++i)
+  //      printf("%02X", ((const uint8_t*) ptr)[i]);
+  //  printf("\n");
+
+  //send after filling FIFO (RFM should be in sleep or standby)
+  setMode(MODE_TRANSMITTER);
+  while ((readReg(REG_IRQFLAGS2) & IRQ2_PACKETSENT) == 0)
+  { //nop
+  };
+
+  setMode(MODE_STANDBY);
+}
 
 ////for debugging
 //void RF69A::readAllRegs() {
