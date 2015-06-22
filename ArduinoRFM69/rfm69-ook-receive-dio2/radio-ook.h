@@ -1,5 +1,10 @@
 // OOK/RSSI RF69 driver
 
+//control statistics logging
+#ifndef STATLOG
+#define STATLOG 0
+#endif
+
 class RF69A {
   public:
     typedef void (*ooktrans_cb)(uint16_t pulse_dur, uint8_t signal, uint8_t rssi);
