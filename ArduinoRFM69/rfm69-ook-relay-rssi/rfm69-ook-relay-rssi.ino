@@ -140,10 +140,10 @@ void relay (class DecodeOOK* decoder) {
   uint8_t pos;
   const uint8_t* data = decoder->getData(pos);
   rf.exit_receive();
-	rf12_initialize(NODEID, RF12_BAND, GROUP, 1600);
-	rf12_sendNow(0, data, pos);
-	rf12_sendWait(1);
-	rf.init(11, 42, frqkHz);
+  rf12_initialize(NODEID, RF12_BAND, GROUP, 1600);
+  rf12_sendNow(0, data, pos);
+  rf12_sendWait(1);
+  rf.init(11, 42, frqkHz);
 }
 
 void processBit(uint16_t pulse_dur, uint8_t signal, uint8_t rssi) {
@@ -166,8 +166,8 @@ void setup() {
   Serial.begin(SERIAL_BAUD);
   Serial.print(F("\r\n[OOK-RX-rssi]\r\n"));
   setupDecoders();
-  if (di>max_decoders)
-  Serial.print(F("ERROR: decoders-array too small. Memory corruption."));
+  if (di > max_decoders)
+    Serial.print(F("ERROR: decoders-array too small. Memory corruption."));
   rf12_initialize(11, RF12_BAND, 42, 1600);// calls rf69_initialize()
   //setup for OOK
   rf.init(11, 42, frqkHz);

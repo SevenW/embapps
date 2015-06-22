@@ -9,7 +9,7 @@
 class WS249 : public DecodeOOK {
   public:
     WS249 () {}
-	WS249 (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
+    WS249 (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
 
     virtual int8_t decode (uint16_t width) {
       uint8_t is_low = !last_signal;
@@ -64,7 +64,7 @@ class Philips : public DecodeOOK {
   public:
     Philips () {
     }
-	Philips (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
+    Philips (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
 
     virtual int8_t decode (uint16_t width) {
       if (1400 < width && width < 2600 || 5400 < width && width < 6900) {
@@ -127,7 +127,7 @@ class OregonDecoderV1 : public DecodeOOK {
     uint8_t syncs;
   public:
     OregonDecoderV1 () {}
-	OregonDecoderV1 (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
+    OregonDecoderV1 (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
 
     // add one bit to the packet data buffer
     virtual void gotBit (int8_t value) {
@@ -224,7 +224,7 @@ class OregonDecoderV1 : public DecodeOOK {
 class OregonDecoderV2 : public DecodeOOK {
   public:
     OregonDecoderV2() {}
-	OregonDecoderV2 (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
+    OregonDecoderV2 (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
 
     // add one bit to the packet data buffer
     virtual void gotBit (int8_t value) {
@@ -287,7 +287,7 @@ class OregonDecoderV2 : public DecodeOOK {
 class OregonDecoderV3 : public DecodeOOK {
   public:
     OregonDecoderV3() {}
-	OregonDecoderV3 (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
+    OregonDecoderV3 (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
 
     // add one bit to the packet data buffer
     virtual void gotBit (int8_t value) {
@@ -338,7 +338,7 @@ class OregonDecoderV3 : public DecodeOOK {
 class OregonDecoder : public DecodeOOK {
   public:
     OregonDecoder () {}
-	OregonDecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
+    OregonDecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
 
     virtual int8_t decode (uint16_t width) {
       if (200 <= width && width < 1200) {
@@ -379,7 +379,7 @@ class CrestaDecoder : public DecodeOOK {
     // http://members.upc.nl/m.beukelaar/Crestaprotocol.pdf
   public:
     CrestaDecoder () {}
-	CrestaDecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
+    CrestaDecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
 
     virtual int8_t decode (uint16_t width) {
       if (200 <= width && width < 1300) {
@@ -420,7 +420,7 @@ class KakuDecoder : public DecodeOOK {
     uint8_t bitval = 0;
   public:
     KakuDecoder () {}
-	KakuDecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
+    KakuDecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
 
     virtual int8_t decode (uint16_t width) {
       //if ((180 <= width && width < 450) || (950 <= width && width < 1250)) {
@@ -478,7 +478,7 @@ class KakuADecoder : public DecodeOOK {
     KakuADecoder () {
       clearBackBuffer();
     }
-	KakuADecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {
+    KakuADecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {
       clearBackBuffer();
     }
 
@@ -551,7 +551,7 @@ class KakuADecoder : public DecodeOOK {
 class XrfDecoder : public DecodeOOK {
   public:
     XrfDecoder () {}
-	XrfDecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
+    XrfDecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
 
     // see also http://davehouston.net/rf.htm
     virtual int8_t decode (uint16_t width) {
@@ -586,7 +586,7 @@ class XrfDecoder : public DecodeOOK {
 class HezDecoder : public DecodeOOK {
   public:
     HezDecoder () {}
-	HezDecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
+    HezDecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
 
     // see also http://homeeasyhacking.wikia.com/wiki/Home_Easy_Hacking_Wiki
     virtual int8_t decode (uint16_t width) {
@@ -608,7 +608,7 @@ class HezDecoder : public DecodeOOK {
 class ElroDecoder : public DecodeOOK {
   public:
     ElroDecoder () {}
-	ElroDecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
+    ElroDecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
 
     virtual int8_t decode (uint16_t width) {
       if (50 <= width && width < 600) {
@@ -662,7 +662,7 @@ class ElroDecoder : public DecodeOOK {
 class FlamingoDecoder : public DecodeOOK {
   public:
     FlamingoDecoder () {}
-	FlamingoDecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
+    FlamingoDecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
 
     virtual int8_t decode (uint16_t width) {
       if ((width > 740 && width < 780) || (width > 2650 && width < 2750) ||
@@ -682,7 +682,7 @@ class FlamingoDecoder : public DecodeOOK {
 class SmokeDecoder : public DecodeOOK {
   public:
     SmokeDecoder () {}
-	SmokeDecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
+    SmokeDecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
 
     virtual int8_t decode (uint16_t width) {
       if (width > 20000 && width < 21000 || width > 6900 && width < 7000 ||
@@ -702,7 +702,7 @@ class SmokeDecoder : public DecodeOOK {
 class ByronbellDecoder : public DecodeOOK {
   public:
     ByronbellDecoder () {}
-	ByronbellDecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
+    ByronbellDecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
 
     virtual int8_t decode (uint16_t width) {
       if (660 < width && width < 715 || 5100 < width && width < 5400) {

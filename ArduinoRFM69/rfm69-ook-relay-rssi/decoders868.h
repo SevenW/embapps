@@ -15,7 +15,7 @@ class WH1080DecoderV2 : public DecodeOOK {
     uint8_t msglen;
   public:
     WH1080DecoderV2 (uint8_t msg_len = 10, uint8_t gap = 5, uint8_t count = 0) : DecodeOOK(gap, count), msglen(msg_len) {}
-	WH1080DecoderV2 (uint8_t id, char* tag, decoded_cb cb, uint8_t msg_len = 10, uint8_t gap = 5, uint8_t count = 0) : DecodeOOK (id, tag, cb, gap, count), msglen(msg_len) {}
+    WH1080DecoderV2 (uint8_t id, char* tag, decoded_cb cb, uint8_t msg_len = 10, uint8_t gap = 5, uint8_t count = 0) : DecodeOOK (id, tag, cb, gap, count), msglen(msg_len) {}
 
     //Dallas One-Wire CRC-8 - incremental calculation.
     uint8_t crc8_update( uint8_t crc, uint8_t inuint8_t)
@@ -110,7 +110,7 @@ class WH1080DecoderV2 : public DecodeOOK {
 class WH1080DecoderV2a : public WH1080DecoderV2 {
   public:
     WH1080DecoderV2a(uint8_t msg_len = 10, uint8_t gap = 5, uint8_t count = 0) : WH1080DecoderV2(msg_len, gap, count) {}
-	WH1080DecoderV2a (uint8_t id, char* tag, decoded_cb cb, uint8_t msg_len = 10, uint8_t gap = 5, uint8_t count = 0) : WH1080DecoderV2 (id, tag, cb, msg_len, gap, count) {}
+    WH1080DecoderV2a (uint8_t id, char* tag, decoded_cb cb, uint8_t msg_len = 10, uint8_t gap = 5, uint8_t count = 0) : WH1080DecoderV2 (id, tag, cb, msg_len, gap, count) {}
 
     // see also http://lucsmall.com/2012/04/29/weather-station-hacking-part-2/
     // 200 < bit-1 < 800 < low < 1200 < bit-0 < 1700
@@ -174,8 +174,8 @@ class WH1080DecoderV2a : public WH1080DecoderV2 {
 class VisonicDecoder : public DecodeOOK {
   public:
     VisonicDecoder () {}
-	VisonicDecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
-	
+    VisonicDecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
+
     virtual int8_t decode (uint16_t width) {
       if (200 <= width && width < 1000) {
         uint8_t w = width >= 600;
@@ -253,8 +253,8 @@ class EMxDecoder : public DecodeOOK {
 class KSxDecoder : public DecodeOOK {
   public:
     KSxDecoder () {}
-	KSxDecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
-	
+    KSxDecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
+
     // see also http://www.dc3yc.homepage.t-online.de/protocol.htm
     virtual int8_t decode (uint16_t width) {
       if (200 <= width && width < 1000) {
@@ -338,7 +338,7 @@ class FSxDecoder : public DecodeOOK {
 class FSxDecoderA : public DecodeOOK {
   public:
     FSxDecoderA () {}
-	FSxDecoderA (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
+    FSxDecoderA (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
     // see also http://fhz4linux.info/tiki-index.php?page=FS20%20Protocol
     virtual int8_t decode (uint16_t width) {
       if (150 <= width && width < 875) {

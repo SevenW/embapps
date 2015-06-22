@@ -1,5 +1,9 @@
 // OOK/RSSI RF69 driver
 
+#ifndef STATLOG
+#define STATLOG 0
+#endif
+
 class RF69A {
   public:
     typedef void (*ooktrans_cb)(uint16_t pulse_dur, uint8_t signal, uint8_t rssi);
@@ -13,11 +17,11 @@ class RF69A {
     //test functions
     void DataModule(uint8_t module);
     void OOKthdMode(uint8_t thdmode);
-	void exit_receive();
+    void exit_receive();
     void receiveOOK_forever(ooktrans_cb processBit);
-	void sendook(uint8_t header, const void* ptr, int len);
-	void init_transmit(uint8_t band);
-	void exit_transmit();
+    void sendook(uint8_t header, const void* ptr, int len);
+    void init_transmit(uint8_t band);
+    void exit_transmit();
     //void readAllRegs();
     //int readStatus();
 
@@ -31,7 +35,7 @@ class RF69A {
       REG_BRMSB         = 0x03,
       REG_FRFMSB        = 0x07,
       REG_PALEVEL       = 0x11,
-	  REG_LNA           = 0x18,
+      REG_LNA           = 0x18,
       REG_OOKPEAK       = 0x1B,
       REG_OOKFIX        = 0x1D,
       REG_AFCFEI        = 0x1E,
@@ -43,7 +47,7 @@ class RF69A {
       REG_RSSIVALUE     = 0x24,
       REG_IRQFLAGS1     = 0x27,
       REG_IRQFLAGS2     = 0x28,
-	  REG_RSSITHRESH    = 0x29,
+      REG_RSSITHRESH    = 0x29,
       REG_PREAMPSIZE    = 0x2D,
       REG_SYNCCONFIG    = 0x2E,
       REG_SYNCVALUE1    = 0x2F,
@@ -79,12 +83,12 @@ class RF69A {
     void setMode (uint8_t newMode);
 
     volatile uint8_t mode;
-	
-	uint8_t tsample = 25; //25 us samples
-	uint8_t fixthd = 55;
-	uint32_t bitrate = 32768;
-	uint8_t bw = 16; //0=250kHz, 8=200kHz, 16=167kHz, 1=125kHz, 9=100kHz, 17=83kHz 2=63kHz, 10=50kHz
-  uint32_t frqkHz = 868400;
+
+    uint8_t tsample = 25; //25 us samples
+    uint8_t fixthd = 55;
+    uint32_t bitrate = 32768;
+    uint8_t bw = 16; //0=250kHz, 8=200kHz, 16=167kHz, 1=125kHz, 9=100kHz, 17=83kHz 2=63kHz, 10=50kHz
+    uint32_t frqkHz = 868400;
 };
 
 // driver implementation
@@ -481,27 +485,27 @@ void RF69A::sendook(uint8_t header, const void* ptr, int len) {
 //}
 
 // int RF69A::readStatus() {
-  // uint8_t f1;
-  // uint8_t f2;
-  // switch (mode) {
-    // case MODE_RECEIVE:
-    // case MODE_TRANSMIT:
-      // f1 = readReg(REG_IRQFLAGS1);
-      // f2 = readReg(REG_IRQFLAGS2);
-      // if (f1 & 0x08) {
-        // //Serial.print( BYTETOBINARYPATTERN, BYTETOBINARY(f1));
-        // //Serial.print( "  ");
-        // //Serial.print( BYTETOBINARYPATTERN, BYTETOBINARY(f2));
-        // //Serial.print( "  ");
-        // //fixthd += 1;
-        // //writeReg(0x1D, fixthd);
-        // //Serial.print(fixthd);
-        // //Serial.print(" ");
-        // Serial.println(readRSSI());
-      // }
-    // default:
-      // break;
-  // }
-  // return 0;
+// uint8_t f1;
+// uint8_t f2;
+// switch (mode) {
+// case MODE_RECEIVE:
+// case MODE_TRANSMIT:
+// f1 = readReg(REG_IRQFLAGS1);
+// f2 = readReg(REG_IRQFLAGS2);
+// if (f1 & 0x08) {
+// //Serial.print( BYTETOBINARYPATTERN, BYTETOBINARY(f1));
+// //Serial.print( "  ");
+// //Serial.print( BYTETOBINARYPATTERN, BYTETOBINARY(f2));
+// //Serial.print( "  ");
+// //fixthd += 1;
+// //writeReg(0x1D, fixthd);
+// //Serial.print(fixthd);
+// //Serial.print(" ");
+// Serial.println(readRSSI());
+// }
+// default:
+// break;
+// }
+// return 0;
 // }
 

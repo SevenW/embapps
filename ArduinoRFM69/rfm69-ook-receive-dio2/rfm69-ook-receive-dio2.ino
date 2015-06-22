@@ -1,4 +1,6 @@
 #define RF69_COMPAT 1 // define this to use the RF69 driver i.s.o. RF12
+#define STATLOG 0 //0=no statistics logging 1=statistics logging
+
 #include <JeeLib.h>
 //#include <Time.h>
 #include "radio-ook.h"
@@ -11,9 +13,9 @@
 #define RF69_RX_PIN PIND
 #define RF69_RX_DDR DDRD
 
+// Config items ------------------------------------------------------------
 #define FREQ_BAND 868 //868 or 433
 #define SERIAL_BAUD 57600
-#define STATLOG 0 //0=no statistics logging 1=statistics logging
 
 #if FREQ_BAND == 433
 #define RF12_BAND RF12_433MHZ
@@ -23,36 +25,48 @@ uint32_t frqkHz = 433920;
 uint32_t frqkHz = 868400;
 #endif
 
-uint8_t tsample = 25; //25 us samples
-//static volatile uint8_t fixthd = 0x10;
-uint8_t fixthd = 0x10;
-uint32_t bitrate = 32768;
-uint8_t bw = 16; //0=250kHz, 8=200kHz, 16=167kHz, 1=125kHz, 9=100kHz, 17=83kHz 2=63kHz, 10=50kHz
+const uint8_t max_decoders = 6; //Too many decoders slows processing down.
+DecodeOOK* decoders[max_decoders] = {NULL};
+uint8_t di = 0;
+void printOOK (class DecodeOOK* decoder);
 
 #if FREQ_BAND == 433
 //433MHz
 #include "decoders433.h"
-WS249 ws249;
-Philips phi;
-OregonDecoderV1 orscV1;
-//OregonDecoderV2 orscV2;
-//OregonDecoderV3 orscV3;
-//CrestaDecoder cres;
-KakuDecoder kaku;
-//KakuADecoder kakuA;
-//XrfDecoder xrf;
-//HezDecoder hez;
+//OregonDecoderV2   orscV2(  5, "ORSV2", printOOK);
+//CrestaDecoder     cres(    6, "CRES ", printOOK);
+KakuDecoder         kaku(    7, "KAKU ", printOOK);
+//XrfDecoder        xrf(     8, "XRF  ", printOOK);
+//HezDecoder        hez(     9, "HEZ  ", printOOK);
+//ElroDecoder       elro(   10, "ELRO ", printOOK);
+//FlamingoDecoder   flam(   11, "FMGO ", printOOK);
+//SmokeDecoder      smok(   12, "SMK  ", printOOK);
+//ByronbellDecoder  byro(   13, "BYR  ", printOOK);
+//KakuADecoder      kakuA(  14, "KAKUA", printOOK);
+WS249               ws249(  20, "WS249", printOOK);
+Philips             phi(    21, "PHI  ", printOOK);
+OregonDecoderV1     orscV1( 22, "ORSV1", printOOK);
+//OregonDecoderV3   orscV3( 23, "ORSV3", printOOK);
+void setupDecoders() {
+  decoders[di++] = &ws249;
+  decoders[di++] = &phi;
+  decoders[di++] = &orscV1;
+  decoders[di++] = &kaku;
+}
 #else
 //868MHz
 #include "decoders868.h"
-//VisonicDecoder viso;
-EMxDecoder emx;
-//KSxDecoder ksx;
-FSxDecoder fsx;
-//FSxDecoderA fsxa;
+//VisonicDecoder    viso(    1, "VISO ", printOOK);
+EMxDecoder          emx(     2, "EMX  ", printOOK);
+//KSxDecoder        ksx(     3, "KSX  ", printOOK);
+FSxDecoder          fsx(     4, "FS20 ", printOOK);
+//FSxDecoderA       fsxa(   44, "FS20A", printOOK);
 //
+void setupDecoders() {
+  decoders[di++] = &emx;
+  decoders[di++] = &fsx;
+}
 #endif
-
 // End config items --------------------------------------------------------
 
 //global instance of the OOK RF69 class
@@ -72,34 +86,9 @@ void printHex(int val) {
   Serial.print(val, HEX);
 }
 
-////small circular buffer for ON rssi signals
-//#define RSSI_BUF_EXP 3 //keep it powers of 2
-//#define RSSI_BUF_SIZE  (1<<RSSI_BUF_EXP)
-//uint8_t rssi_buf[RSSI_BUF_SIZE];
-//uint8_t rssi_buf_i = 0;
-//
-//void printRSSI() {
-//  uint16_t avgonrssi = 0;
-//  uint16_t avgoffrssi = 0;
-//  for (uint8_t i = 0; i < RSSI_BUF_SIZE; i += 2) {
-//    avgonrssi += rssi_buf[i];
-//    avgoffrssi += rssi_buf[i + 1];
-//    //Serial.print(" (");
-//    //Serial.print(rssi_buf[i+1]);
-//    //Serial.print("/");
-//    //Serial.print(rssi_buf[i]);
-//    //Serial.print(") ");
-//  }
-//  Serial.print(" (");
-//  Serial.print(avgoffrssi >> RSSI_BUF_EXP - 1);
-//  Serial.print("/");
-//  Serial.print(avgonrssi >> RSSI_BUF_EXP - 1);
-//  Serial.print(")");
-//}
-
-void reportOOK (const char* s, class DecodeOOK& decoder) {
+void printOOK (class DecodeOOK* decoder) {
   uint8_t pos;
-  const uint8_t* data = decoder.getData(pos);
+  const uint8_t* data = decoder->getData(pos);
   //Serial.println("");
   //Serial.print(hour());
   //printDigits(minute());
@@ -109,7 +98,7 @@ void reportOOK (const char* s, class DecodeOOK& decoder) {
   //rf12_settings_text(textbuf);
   //Serial.print(textbuf);
   //Serial.print(' ');
-  Serial.print(s);
+  Serial.print(decoder->tag);
   Serial.print(' ');
   for (uint8_t i = 0; i < pos; ++i) {
     printHex(data[i]);
@@ -117,65 +106,23 @@ void reportOOK (const char* s, class DecodeOOK& decoder) {
   //printRSSI();
   Serial.println();
 
-  decoder.resetDecoder();
+  decoder->resetDecoder();
 }
 
-#if FREQ_BAND == 433
 void processBit(uint16_t pulse_dur, uint8_t signal, uint8_t rssi) {
-  //  if (rssi) {
-  //    if (signal) {
-  //      rssi_buf_i += 2;
-  //      rssi_buf_i &= (RSSI_BUF_SIZE - 2);
-  //      rssi_buf[rssi_buf_i] = rssi;
-  //    } else {
-  //      rssi_buf[rssi_buf_i + 1] = rssi;
-  //    }
-  //  }
-  //Serial.print( "\r\nf=%3d.%3dkHz BW-idx=%2d, OOKTHd = %d - ", frqkHz/1000, frqkHz%1000, bw, fixthd);
-  if (orscV1.nextPulse(pulse_dur, signal)) {
-    reportOOK("ORSCV1 ", orscV1);
-    //set scope trigger
-    //palWritePad(GPIOB, 4, 1);
-  }
-  if (kaku.nextPulse(pulse_dur, signal))
-    reportOOK("kaku", kaku);
-  if (ws249.nextPulse(pulse_dur, signal))
-    reportOOK("WS249", ws249);
-  if (phi.nextPulse(pulse_dur, signal)) {
-    reportOOK("phi", phi);
-    //set scope trigger
-    //palWritePad(GPIOB, 4, 1);
+  for (uint8_t i = 0; decoders[i]; i++) {
+    if (decoders[i]->nextPulse(pulse_dur, signal))
+      decoders[i]->decoded(decoders[i]);
   }
 }
-#else
-void processBit(uint16_t pulse_dur, uint8_t signal, uint8_t rssi) {
-  //  if (rssi) {
-  //    if (signal) {
-  //      rssi_buf_i += 2;
-  //      rssi_buf_i &= (RSSI_BUF_SIZE - 2);
-  //      rssi_buf[rssi_buf_i] = rssi;
-  //    } else {
-  //      rssi_buf[rssi_buf_i + 1] = rssi;
-  //    }
-  //  }
-  //Serial.print( "\r\nf=%3d.%3dkHz BW-idx=%2d, OOKTHd = %d - ", frqkHz/1000, frqkHz%1000, bw, fixthd);
-  if (emx.nextPulse(pulse_dur, signal)) {
-    reportOOK("EMX  ", emx);
-    //set scope trigger
-    //palWritePad(GPIOB, 4, 1);
-  }
-  if (fsx.nextPulse(pulse_dur, signal)) {
-    reportOOK("FS20 ", fsx);
-    //set scope trigger
-    //palWritePad(GPIOB, 4, 1);
-  }
-  //  if (fsxa.nextPulse(pulse_dur, signal)) {
-  //    reportOOK("FS20A", fsxa);
-  //    //set scope trigger
-  //    //palWritePad(GPIOB, 4, 1);
-  //  }
-}
-#endif
+
+//TODO: Integrate DIO2 based receive function in radio-ook.h
+//
+uint8_t tsample = 25; //25 us samples
+//static volatile uint8_t fixthd = 0x10;
+uint8_t fixthd = 0x10;
+uint32_t bitrate = 32768;
+uint8_t bw = 16; //0=250kHz, 8=200kHz, 16=167kHz, 1=125kHz, 9=100kHz, 17=83kHz 2=63kHz, 10=50kHz
 
 static void receiveOOK() {
   //moving average buffer
@@ -220,12 +167,7 @@ static void receiveOOK() {
   uint32_t thdUpd = millis();
   uint32_t thdUpdCnt = 0;
 
-  //Calculate RSSI during OOK pulse train.
   uint8_t last_steady_rssi = 0;
-  //  uint8_t rssi_q_off = 2; //stay >75us away from flip. 2 samples.
-  //  uint8_t rssi_q_len = avg_len + rssi_q_off + 1;
-  //  uint8_t rssi_q[rssi_q_len];
-  //  uint8_t rssi_qi = 0;
 
   while (true) {
     //rssi = ~rf.readRSSI();
@@ -238,29 +180,6 @@ static void receiveOOK() {
       ts_rssi = micros();
       if (rssi > rssimax) rssimax = rssi;
     }
-
-    //    //emulate PEAK-mode OOK threshold
-    //    decthdcnt++;
-    //    if (((decthdcnt & 3) == 0) and (slicethd > fixthd)) {
-    //      //decrement slicethd every 4th poll (~280us) with 0.5dB
-    //      slicethd--;
-    //    }
-    //    prev_thd = slicethd;
-    //    if (rssi > slicethd + 12) {
-    //      //deal with outlier rssi?
-    //      slicethd = rssi - 12;
-    //      //limit printing
-    //      if (slicethd > prev_thd + 12) {
-    //        //Serial.print( "PEAK-THD: set %d\r\n", slicethd);
-    //      }
-    //      if (rssi > 200) {
-    //        slicethd = 188;
-    //        Serial.print(F("PEAK-THD: outlier rssi "));
-    //        Serial.println(rssi);
-    //      }
-    //      if (slicethd < fixthd) slicethd = fixthd;
-    //    }
-    //    if (slicethd > max_thd) max_thd = slicethd;
 
     uint8_t data_in = bitRead(RF69_RX_PIN, RF69_RX_DATA);
     //uint8_t data_in = rssi > slicethd;
@@ -275,16 +194,6 @@ static void receiveOOK() {
     uint8_t data_out = (c > (avg_len >> 1)); //bit count moving average
     //filtered DATA to scope
     //palWritePad(GPIOB, 5, (data_out & 0x01));
-
-    //    //delay rssi to sync with moving average data
-    //    //delay: half the average buffer + 50-75us further back (3 samples)
-    //    uint8_t j = rssi_qi + rssi_q_len - (avg_len >> 1) - rssi_q_off;
-    //    if (j >= rssi_q_len)
-    //      j -= rssi_q_len;
-    //    uint8_t delayed_rssi = rssi_q[j];
-    //    rssi_q[rssi_qi++] = rssi;
-    //    if (rssi_qi >= rssi_q_len)
-    //      rssi_qi = 0;
 
     uint32_t ts_thdUpdNow = millis();
 
@@ -389,6 +298,10 @@ static void receiveOOK() {
 void setup() {
   Serial.begin(SERIAL_BAUD);
   Serial.print(F("\r\n[OOK-RX-dio2-poll]\r\n"));
+  setupDecoders();
+  if (di>max_decoders)
+  Serial.print(F("ERROR: decoders-array too small. Memory corruption."));
+
   //D3 (INT1) as input
   pinMode(3, INPUT); //D3 is input
   digitalWrite(3, HIGH); //pull up D3
@@ -404,7 +317,5 @@ void setup() {
 }
 
 void loop() {
-  while (true) {
     receiveOOK();
-  }
 }

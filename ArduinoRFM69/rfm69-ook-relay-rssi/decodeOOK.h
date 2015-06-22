@@ -72,22 +72,22 @@ class DecodeOOK {
         data[i] = (data[i] << 4) | (data[i] >> 4);
     }
 
-	uint16_t crc16_update(uint16_t crc, uint8_t a)
-	{
-		int i;
+    uint16_t crc16_update(uint16_t crc, uint8_t a)
+    {
+      int i;
 
-		crc ^= a;
-		for (i = 0; i < 8; ++i)
-		{
-			if (crc & 1)
-				crc = (crc >> 1) ^ 0xA001;
-			else
-				crc = (crc >> 1);
-		}
+      crc ^= a;
+      for (i = 0; i < 8; ++i)
+      {
+        if (crc & 1)
+          crc = (crc >> 1) ^ 0xA001;
+        else
+          crc = (crc >> 1);
+      }
 
-		return crc;
-	}
-	
+      return crc;
+    }
+
     //  bool checkRepeats () {
     //    // calculate the checksum over the current packet
     //    uint16_t crc = ~0;
@@ -110,15 +110,15 @@ class DecodeOOK {
     }
 
   private:
-    char es=0;
+    char es = 0;
 
   public:
     enum { UNKNOWN, T0, T1, T2, T3, OK, DONE };
-typedef void (*decoded_cb)(DecodeOOK*);
-	
-	char* tag;
-  uint8_t id = 0;
-  decoded_cb decoded = NULL;
+    typedef void (*decoded_cb)(DecodeOOK*);
+
+    char* tag;
+    uint8_t id = 0;
+    decoded_cb decoded = NULL;
 
     DecodeOOK (uint8_t gap = 5, uint8_t count = 0)
       : lastCrc (0), lastTime (0), repeats (0), minGap (gap), minCount (count)
