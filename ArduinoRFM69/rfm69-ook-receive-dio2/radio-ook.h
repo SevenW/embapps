@@ -279,39 +279,6 @@ void RF69A::receiveOOK_forever(ooktrans_cb processBit) {
 
   while (true) {
     rssi = ~readRSSI();
-    //statistics update every 1ms
-    if ((micros() - ts_rssi) > (1000)) {
-      //rssi = ~readRSSI();
-      sumrssi += rssi;
-      sumsqrssi += rssi * rssi;
-      nrssi++;
-      ts_rssi = micros();
-      if (rssi > rssimax) rssimax = rssi;
-    }
-
-    //emulate PEAK-mode OOK threshold
-    decthdcnt++;
-    if (((decthdcnt & 3) == 0) and (slicethd > fixthd)) {
-      //decrement slicethd every 4th poll (~280us) with 0.5dB
-      slicethd--;
-    }
-    prev_thd = slicethd;
-    if (rssi > slicethd + 12) {
-      //deal with outlier rssi?
-      slicethd = rssi - 12;
-      //limit printing
-      if (slicethd > prev_thd + 12) {
-        //Serial.print( "PEAK-THD: set %d\r\n", slicethd);
-      }
-      if (rssi > 200) {
-        slicethd = 188;
-        Serial.print(F("PEAK-THD: outlier rssi "));
-        Serial.println(rssi);
-      }
-      if (slicethd < fixthd) slicethd = fixthd;
-    }
-    if (slicethd > max_thd) max_thd = slicethd;
-
     //uint8_t data_in = palReadPad(DIO2_port, DIO2_pad);
     uint8_t data_in = rssi > slicethd;
     filter = (filter << 1) | (data_in & 0x01);
@@ -336,8 +303,6 @@ void RF69A::receiveOOK_forever(ooktrans_cb processBit) {
     if (rssi_qi >= rssi_q_len)
       rssi_qi = 0;
 
-    uint32_t ts_thdUpdNow = millis();
-
     if (data_out != last_data) {
       new_edge = micros();
       processBit(new_edge - last_edge, last_data, last_steady_rssi);
@@ -351,7 +316,18 @@ void RF69A::receiveOOK_forever(ooktrans_cb processBit) {
     } else
       last_steady_rssi = delayed_rssi;
 
+    //statistics update every 1ms
+    if ((micros() - ts_rssi) > (1000)) {
+      //rssi = ~readRSSI();
+      sumrssi += rssi;
+      sumsqrssi += rssi * rssi;
+      nrssi++;
+      ts_rssi = micros();
+      if (rssi > rssimax) rssimax = rssi;
+    }
+
     //Update minimum slice threshold (fixthd) every 10s
+    uint32_t ts_thdUpdNow = millis();
     if (ts_thdUpdNow - thdUpd >= 10000) {
       //rssivar = ((sumsqrssi - sumrssi*sumrssi/nrssi) / (nrssi-1)); //64 bits
       rssivar = ((sumsqrssi - ((sumrssi >> 8) * ((sumrssi << 8) / nrssi))) / (nrssi - 1)); //32bits n<65000
@@ -413,6 +389,29 @@ void RF69A::receiveOOK_forever(ooktrans_cb processBit) {
       //palWritePad(GPIOB, 4, 0);
     }
     thdUpdCnt++;
+
+    //emulate PEAK-mode OOK threshold
+    decthdcnt++;
+    if (((decthdcnt & 3) == 0) and (slicethd > fixthd)) {
+      //decrement slicethd every 4th poll (~280us) with 0.5dB
+      slicethd--;
+    }
+    prev_thd = slicethd;
+    if (rssi > slicethd + 12) {
+      //deal with outlier rssi?
+      slicethd = rssi - 12;
+      //limit printing
+      if (slicethd > prev_thd + 12) {
+        //Serial.print( "PEAK-THD: set %d\r\n", slicethd);
+      }
+      if (rssi > 200) {
+        slicethd = 188;
+        Serial.print(F("PEAK-THD: outlier rssi "));
+        Serial.println(rssi);
+      }
+      if (slicethd < fixthd) slicethd = fixthd;
+    }
+    if (slicethd > max_thd) max_thd = slicethd;
 
     if (rssi > 120) {
       //set scope trigger
