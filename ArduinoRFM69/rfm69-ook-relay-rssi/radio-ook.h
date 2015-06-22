@@ -1,12 +1,9 @@
 // OOK/RSSI RF69 driver
 
-#ifndef STATLOG
-#define STATLOG 0
-#endif
-
 class RF69A {
   public:
     typedef void (*ooktrans_cb)(uint16_t pulse_dur, uint8_t signal, uint8_t rssi);
+    RF69A();
     void init (uint8_t id, uint8_t group, uint32_t freq);
     uint8_t readRSSI();
     void setThd(uint8_t thd);
@@ -26,6 +23,7 @@ class RF69A {
     //int readStatus();
 
     uint8_t myGroup;
+    uint8_t myId;
 
   protected:
     enum {
@@ -84,11 +82,11 @@ class RF69A {
 
     volatile uint8_t mode;
 
-    uint8_t tsample = 25; //25 us samples
-    uint8_t fixthd = 55;
-    uint32_t bitrate = 32768;
-    uint8_t bw = 16; //0=250kHz, 8=200kHz, 16=167kHz, 1=125kHz, 9=100kHz, 17=83kHz 2=63kHz, 10=50kHz
-    uint32_t frqkHz = 868400;
+    uint8_t tsample;
+    uint8_t fixthd;
+    uint32_t bitrate;
+    uint8_t bw;
+    uint32_t frqkHz;
 };
 
 // driver implementation
@@ -132,8 +130,17 @@ void RF69A::configure (const uint8_t* p) {
   }
 }
 
+RF69A::RF69A() {
+    tsample = 25; //25 us samples
+    fixthd = 55;
+    bitrate = 32768;
+    bw = 16; //0=250kHz, 8=200kHz, 16=167kHz, 1=125kHz, 9=100kHz, 17=83kHz 2=63kHz, 10=50kHz
+    frqkHz = 868400;
+}
+
 void RF69A::init (uint8_t id, uint8_t group, uint32_t freq) {
   frqkHz = freq;
+  myId=id;
   //RF69<SPI>::init(id, group, freq);
   configure(configRegsOOK);
   OOKthdMode(0x40); //0x00=fix, 0x40=peak, 0x80=avg
