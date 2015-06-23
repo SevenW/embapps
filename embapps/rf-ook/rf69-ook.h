@@ -95,6 +95,7 @@ class RF69A : public RF69<SPI> {
 // driver implementation
 
 static const uint8_t configRegsOOK [] = {
+<<<<<<< HEAD
   0x01, 0x04, // OpMode = standby
   0x02, 0x68, // DataModul = conti mode, ook, no shaping
   0x03, 0x03, // BitRateMsb, data rate = 32768bps maxOOK
@@ -113,6 +114,26 @@ static const uint8_t configRegsOOK [] = {
   //0x58, 0x2D, // Sensitivity boost (TestLNA)
   0x6F, 0x20, // TestDagc ...
   0
+=======
+    0x01, 0x04, // OpMode = standby
+    0x02, 0x68, // DataModul = conti mode, ook, no shaping
+    0x03, 0x03, // BitRateMsb, 32768bps
+    0x04, 0xD1, // BitRateLsb, divider = 32 MHz / 650
+    0x0B, 0x20, // AfcCtrl, afclowbetaon
+    0x18, 0x81, // LNA fixed highest gain, Z=200ohm
+    0x19, 0x40, // RxBw DCC=4%, Man=00b Exp = 0 =>BWOOK=250.0kHz
+    0x1B, 0x43, // OOK peak, 0.5dB once/8 chips (slowest)
+    0x1C, 0x80, // OOK avg thresh /4pi
+    0x1D, 0x38, // OOK fixed thresh
+    0x1E, 0x00, // No auto AFC
+    0x25, 0x80, // Dio 0: RSSI 1: Dclk 2: Data 3: RSSI
+    0x26, 0x37, // Dio 5: ModeReady, CLKOUT = OFF
+    0x29, 0xFF, // RssiThresh: lowest possible threshold to start receive
+    0x2E, 0x00, // SyncConfig = sync off
+    //0x58, 0x2D, // Sensitivity boost (TestLNA)
+    0x6F, 0x20, // TestDagc ...
+    0
+>>>>>>> origin/master
 };
 
 template< typename SPI >
