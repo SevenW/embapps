@@ -434,7 +434,7 @@ static void ook_initialize(uint8_t band) {
     setFrequency(434920);
     setBitrate(2667);
   } else {
-    setFrequency(868400);
+    setFrequency(868280);
     setBitrate(5000);
   }
 #else
