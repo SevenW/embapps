@@ -22,7 +22,7 @@
 uint32_t frqkHz = 433920;
 #else
 #define RF12_BAND RF12_868MHZ
-uint32_t frqkHz = 868400;
+uint32_t frqkHz = 868280;
 #endif
 
 const uint8_t max_decoders = 6; //Too many decoders slows processing down.
