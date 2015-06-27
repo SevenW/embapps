@@ -21,7 +21,7 @@ uint8_t DIO2 = 15; //GPIO pin DIO2(=DATA)
 
 //#define FREQ_BAND 433
 #define FREQ_BAND 868  // 868 or 434
-#define PACKET true  //true or false
+#define PACKET false  //true or false
 
 RF69RC<SpiDev0> rf;
 
@@ -158,7 +158,7 @@ static void fs20cmd(uint16_t house, uint8_t addr, uint8_t cmd) {
 		fs20sendBits(sum, 8);
 		fs20sendBits(0, 1);
 		stopOOK();
-		delay = 1000; //10ms = 1000 beats of 10us
+		delay = 880; //8.8ms = 1000 beats of 10us
 		while (delay)
 			;
 	}
@@ -282,16 +282,16 @@ int main() {
 	printf("\n[rf-ook-tx] dev %x node %d\n", devId, nodeId);
 	printf("OOK TX\n");
 
-	rf.init(nodeId, 42, 8684);
+	rf.init(nodeId, 42, 868270);
 	if (PACKET) {
-		rf.initOOKpckt(nodeId, 42, 8684);
+		rf.initOOKpckt(nodeId, 42, 868270);
 	} else {
-		rf.initOOKcont(nodeId, 42, 8684);
+		rf.initOOKcont(nodeId, 42, 868270);
 	}
-	rf.txPower(6); // 0 = min .. 31 = max
+	rf.txPower(5); // 0 = min .. 31 = max
 
 	while (true) {
-		if (ticks > 100000) {
+		if (ticks > 500000) {
 			printf("Send one at %d\n", ticks);
 			fs20cmd(0x1000, 0x01, 0x12);
 			ticks = 0;

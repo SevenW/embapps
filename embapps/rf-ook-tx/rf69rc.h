@@ -65,7 +65,7 @@ static const uint8_t configRegsOOKpckt [] = {
     //0x29, 0xA0, // RssiThresh -80 dB
     0x2D, 0x00, // PreambleSize = 0 NO PREAMBLE
     0x2E, 0x00, // SyncConfig = sync OFF
-    //0x2F, 0x2D, // SyncValue1 = 0x2D
+    //0x2F, 0x00, // SyncValue1 = 0x2D
     0x37, 0x80, // PacketConfig1 = variable length, advanced items OFF
     0x38, 0x00, // PayloadLength = 0, unlimited
     //0x3C, 0x8F, // FifoTresh, not empty, level 15

@@ -26,7 +26,7 @@ uint8_t fixthd = 60;
 #if FREQ_BAND == 434
 uint32_t frqkHz = 433920;
 #else
-uint32_t frqkHz = 868400;
+uint32_t frqkHz = 868280;
 #endif
 uint32_t bitrate = 32768; //max OOK 32768bps, max FSK 300000bps
 uint8_t bw = 16; //0=250kHz, 8=200kHz, 16=167kHz, 1=125kHz, 9=100kHz, 17=83kHz 2=63kHz, 10=50kHz
