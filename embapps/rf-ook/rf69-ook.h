@@ -25,7 +25,7 @@ class RF69A : public RF69<SPI> {
     void sendook(uint8_t header, const void* ptr, int len);
     void init_transmit(uint8_t band);
     void exit_transmit();
-    //void readAllRegs();
+    void readAllRegs();
     //int readStatus();
 
     uint8_t myGroup;
@@ -95,7 +95,6 @@ class RF69A : public RF69<SPI> {
 // driver implementation
 
 static const uint8_t configRegsOOK [] = {
-<<<<<<< HEAD
   0x01, 0x04, // OpMode = standby
   0x02, 0x68, // DataModul = conti mode, ook, no shaping
   0x03, 0x03, // BitRateMsb, data rate = 32768bps maxOOK
@@ -114,26 +113,6 @@ static const uint8_t configRegsOOK [] = {
   //0x58, 0x2D, // Sensitivity boost (TestLNA)
   0x6F, 0x20, // TestDagc ...
   0
-=======
-    0x01, 0x04, // OpMode = standby
-    0x02, 0x68, // DataModul = conti mode, ook, no shaping
-    0x03, 0x03, // BitRateMsb, 32768bps
-    0x04, 0xD1, // BitRateLsb, divider = 32 MHz / 650
-    0x0B, 0x20, // AfcCtrl, afclowbetaon
-    0x18, 0x81, // LNA fixed highest gain, Z=200ohm
-    0x19, 0x40, // RxBw DCC=4%, Man=00b Exp = 0 =>BWOOK=250.0kHz
-    0x1B, 0x43, // OOK peak, 0.5dB once/8 chips (slowest)
-    0x1C, 0x80, // OOK avg thresh /4pi
-    0x1D, 0x38, // OOK fixed thresh
-    0x1E, 0x00, // No auto AFC
-    0x25, 0x80, // Dio 0: RSSI 1: Dclk 2: Data 3: RSSI
-    0x26, 0x37, // Dio 5: ModeReady, CLKOUT = OFF
-    0x29, 0xFF, // RssiThresh: lowest possible threshold to start receive
-    0x2E, 0x00, // SyncConfig = sync off
-    //0x58, 0x2D, // Sensitivity boost (TestLNA)
-    0x6F, 0x20, // TestDagc ...
-    0
->>>>>>> origin/master
 };
 
 template< typename SPI >
@@ -149,7 +128,7 @@ template< typename SPI >
 void RF69A<SPI>::init (uint8_t id, uint8_t group, uint32_t freq) {
   frqkHz = freq;
   myId=id;
-  //RF69<SPI>::init(id, group, freq);
+  RF69<SPI>::init(id, group, freq);
   this->configure(configRegsOOK);
   OOKthdMode(0x40); //0x00=fix, 0x40=peak, 0x80=avg
   setBitrate(bitrate);
@@ -204,10 +183,12 @@ void RF69A<SPI>::setFrequency (uint32_t frq) {
   // accept any frequency scale as input, including KHz and MHz
   while (frq < 100000000)
     frq *= 10;
-  uint64_t frf = ((uint64_t)frq << 8) / (32000000L >> 11);
-  this->writeReg(REG_FRFMSB, frf >> 16);
-  this->writeReg(REG_FRFMSB + 1, frf >> 8);
-  this->writeReg(REG_FRFMSB + 2, frf);
+  uint32_t frf = frq / (32000000L >> 11);
+  uint32_t frm = ((frq % (32000000L >> 11)) << 8) / (32000000L >> 11);
+  this->writeReg(REG_FRFMSB, frf >> 8);
+  this->writeReg(REG_FRFMSB+1, frf);
+  this->writeReg(REG_FRFMSB+2, frm);
+  printf("frq=%02X%02X%02X\r\n", (uint8_t)(frf>>8), (uint8_t)(frf), (uint8_t)( frm));
 }
 
 template< typename SPI >
@@ -459,7 +440,7 @@ void RF69A<SPI>::init_transmit(uint8_t band) {
     setFrequency(434920);
     setBitrate(2667);
   } else {
-    setFrequency(868400);
+    setFrequency(868280);
     setBitrate(5000);
   }
 }
@@ -492,3 +473,39 @@ void RF69A<SPI>::sendook(uint8_t header, const void* ptr, int len) {
   setMode(MODE_STANDBY);
 }
 
+//for debugging
+template< typename SPI >
+void RF69A<SPI>::readAllRegs() {
+    uint8_t regVal;
+
+    printf("     0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  D\r\n00: 00");
+    for (uint8_t regAddr = 1; regAddr <= 0x4F; regAddr++) {
+        regVal = this->readReg(regAddr);
+        if (regAddr % 16 == 0)
+        printf("\r\n%02X:", regAddr);
+        printf(" %02X", regVal);
+    }
+    printf("\r\n");
+}
+//
+//template< typename SPI >
+//int RF69A<SPI>::readStatus() {
+//    switch (this->mode) {
+//    case MODE_RECEIVE:
+//    case MODE_TRANSMIT:
+//        uint8_t f1 = this->readReg(REG_IRQFLAGS1);
+//        uint8_t f2 = this->readReg(REG_IRQFLAGS2);
+//        if (f1 & 0x08) {
+//            //chprintf(serial, BYTETOBINARYPATTERN, BYTETOBINARY(f1));
+//            //chprintf(serial, "  ");
+//            //chprintf(serial, BYTETOBINARYPATTERN, BYTETOBINARY(f2));
+//            //chprintf(serial, "  ");
+//            //fixthd += 1;
+//            //this->writeReg(0x1D, fixthd);
+//            chprintf(serial, "%02x %02x\r\n", fixthd, readRSSI());
+//        }
+//    default:
+//        break;
+//    }
+//    return 0;
+//}
