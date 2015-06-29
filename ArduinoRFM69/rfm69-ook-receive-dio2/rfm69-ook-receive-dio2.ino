@@ -1,5 +1,5 @@
 #define RF69_COMPAT 1 // define this to use the RF69 driver i.s.o. RF12
-#define STATLOG 1 //0=no statistics logging 1=statistics logging
+#define STATLOG 0 //0=no statistics logging 1=statistics logging
 
 #include <JeeLib.h>
 //#include <Time.h>
