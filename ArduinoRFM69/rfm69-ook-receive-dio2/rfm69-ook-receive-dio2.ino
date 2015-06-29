@@ -1,5 +1,5 @@
 #define RF69_COMPAT 1 // define this to use the RF69 driver i.s.o. RF12
-#define STATLOG 0 //0=no statistics logging 1=statistics logging
+#define STATLOG 1 //0=no statistics logging 1=statistics logging
 
 #include <JeeLib.h>
 //#include <Time.h>
@@ -57,13 +57,13 @@ void setupDecoders() {
 //868MHz
 #include "decoders868.h"
 //VisonicDecoder    viso(    1, "VISO ", printOOK);
-EMxDecoder          emx(     2, "EMX  ", printOOK);
+//EMxDecoder          emx(     2, "EMX  ", printOOK);
 //KSxDecoder        ksx(     3, "KSX  ", printOOK);
 FSxDecoder          fsx(     4, "FS20 ", printOOK);
 //FSxDecoderA       fsxa(   44, "FS20A", printOOK);
 //
 void setupDecoders() {
-  decoders[di++] = &emx;
+  //decoders[di++] = &emx;
   decoders[di++] = &fsx;
 }
 #endif
@@ -86,9 +86,58 @@ void printHex(int val) {
   Serial.print(val, HEX);
 }
 
+#define RSSI_BUF_EXP 3 //keep it powers of 2
+#define RSSI_BUF_SIZE  (1<<RSSI_BUF_EXP)
+uint8_t rssi_buf[RSSI_BUF_SIZE];
+uint8_t rssi_buf_i = 0;
+
+void printRSSI() {
+  uint16_t avgonrssi = 0;
+  uint16_t avgoffrssi = 0;
+  for (uint8_t i = 0; i < RSSI_BUF_SIZE; i += 2) {
+    avgonrssi += rssi_buf[i];
+    avgoffrssi += rssi_buf[i + 1];
+    //Serial.print(" (");
+    //Serial.print(rssi_buf[i+1]);
+    //Serial.print("/");
+    //Serial.print(rssi_buf[i]);
+    //Serial.print(") ");
+  }
+  Serial.print(" (");
+  Serial.print(avgoffrssi >> RSSI_BUF_EXP - 1);
+  Serial.print("/");
+  Serial.print(avgonrssi >> RSSI_BUF_EXP - 1);
+  Serial.print(")");
+}
+
 void printOOK (class DecodeOOK* decoder) {
-  uint8_t pos;
-  const uint8_t* data = decoder->getData(pos);
+    static uint32_t last_print = 0;
+    static uint8_t mesgcnt = 1;
+    uint8_t pos;
+    const uint8_t* data = decoder->getData(pos);
+    uint32_t now =millis();
+    if (now -last_print < 1000) {
+        mesgcnt++;
+        //chprintf(serial, "%12d     %3d %1d ", now, now-last_print, mesgcnt);
+        //Serial.print(now);
+        //Serial.print("      ");
+        //Serial.print(now-last_print);
+        //Serial.print(" ");
+        //Serial.print(mesgcnt);
+        //Serial.print("  ");
+    } else {
+        mesgcnt = 1;
+        //chprintf(serial, "\r\n%12d %3d     %1d ", now, (now-last_print)/1000, mesgcnt);
+        Serial.println();
+        //Serial.print(now);
+        //Serial.print(" ");
+        //Serial.print((now-last_print)/1000);
+        //Serial.print("      ");
+        //Serial.print(mesgcnt);
+        //Serial.print("  ");
+    }
+    last_print = now;
+    
   //Serial.println("");
   //Serial.print(hour());
   //printDigits(minute());
@@ -103,13 +152,22 @@ void printOOK (class DecodeOOK* decoder) {
   for (uint8_t i = 0; i < pos; ++i) {
     printHex(data[i]);
   }
-  //printRSSI();
+  printRSSI();
   Serial.println();
 
   decoder->resetDecoder();
 }
 
 void processBit(uint16_t pulse_dur, uint8_t signal, uint8_t rssi) {
+  if (rssi) {
+    if (signal) {
+      rssi_buf_i += 2;
+      rssi_buf_i &= (RSSI_BUF_SIZE - 2);
+      rssi_buf[rssi_buf_i] = rssi;
+    } else {
+      rssi_buf[rssi_buf_i + 1] = rssi;
+    }
+  }
   for (uint8_t i = 0; decoders[i]; i++) {
     if (decoders[i]->nextPulse(pulse_dur, signal))
       decoders[i]->decoded(decoders[i]);
@@ -120,7 +178,7 @@ void processBit(uint16_t pulse_dur, uint8_t signal, uint8_t rssi) {
 //
 uint8_t tsample = 25; //25 us samples
 //static volatile uint8_t fixthd = 0x10;
-uint8_t fixthd = 0x10;
+uint8_t fixthd = 65;
 uint32_t bitrate = 32768;
 uint8_t bw = 16; //0=250kHz, 8=200kHz, 16=167kHz, 1=125kHz, 9=100kHz, 17=83kHz 2=63kHz, 10=50kHz
 
@@ -136,7 +194,7 @@ static void receiveOOK() {
   rf.setFrequency(frqkHz);
   rf.setBW(bw);
   rf.setThd(fixthd);
-  //rf.readAllRegs();
+  rf.readAllRegs();
   uint8_t t_step = tsample;
   uint32_t now = micros();
   uint32_t soon = now + t_step;
@@ -168,14 +226,18 @@ static void receiveOOK() {
   uint32_t thdUpdCnt = 0;
 
   uint8_t last_steady_rssi = 0;
+  uint8_t rssi_q_off = 2; //stay >75us away from flip. 2 samples.
+  uint8_t rssi_q_len = avg_len + rssi_q_off + 1;
+  uint8_t rssi_q[rssi_q_len];
+  uint8_t rssi_qi = 0;
 
   while (true) {
-    //rssi = ~rf.readRSSI();
+    rssi = ~rf.readRSSI();
     //statistics update every 1ms
     if ((micros() - ts_rssi) > (1000)) {
-      rssi = ~rf.readRSSI();
+      //rssi = ~rf.readRSSI();
       sumrssi += rssi;
-      sumsqrssi += rssi * rssi;
+      sumsqrssi += (uint16_t)rssi * (uint16_t)rssi;
       nrssi++;
       ts_rssi = micros();
       if (rssi > rssimax) rssimax = rssi;
@@ -195,6 +257,16 @@ static void receiveOOK() {
     //filtered DATA to scope
     //palWritePad(GPIOB, 5, (data_out & 0x01));
 
+    //delay rssi to sync with moving average data
+    //delay: half the average buffer + 50-75us further back (3 samples)
+    uint8_t j = rssi_qi + rssi_q_len - (avg_len >> 1) - rssi_q_off;
+    if (j >= rssi_q_len)
+      j -= rssi_q_len;
+    uint8_t delayed_rssi = rssi_q[j];
+    rssi_q[rssi_qi++] = rssi;
+    if (rssi_qi >= rssi_q_len)
+      rssi_qi = 0;
+
     uint32_t ts_thdUpdNow = millis();
 
     if (data_out != last_data) {
@@ -207,8 +279,8 @@ static void receiveOOK() {
       //send fake pulse to notify end of transmission to decoders
       processBit(micros() - last_edge, last_data, 0);
       processBit(1, !last_data, 0);
-    } /* else
-      last_steady_rssi = delayed_rssi; */
+    } else
+      last_steady_rssi = delayed_rssi;
 
     //Update minimum slice threshold (fixthd) every 10s
     if (ts_thdUpdNow - thdUpd >= 10000) {
@@ -223,6 +295,11 @@ static void receiveOOK() {
         stddev++;
       }
       //printf("n=%d, sum=%d, sumsqr=%d\n", nrssi, sumrssi, sumsqrssi);
+//      Serial.println(nrssi);
+//      Serial.println((uint32_t)(sumrssi >> 16), HEX);
+//      Serial.println((uint32_t)(sumrssi & 0xFFFF), HEX);
+//      Serial.println((uint32_t)(sumsqrssi >> 16), HEX);
+//      Serial.println((uint32_t)(sumsqrssi & 0xFFFF), HEX);
       //adapt rssi thd to noise level if variance is low
       if (rssivar < 36) {
         uint8_t delta_thd = 3 * stddev;

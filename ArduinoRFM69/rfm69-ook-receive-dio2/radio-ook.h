@@ -24,7 +24,7 @@ class RF69A {
     void sendook(uint8_t header, const void* ptr, int len);
     void init_transmit(uint8_t band);
     void exit_transmit();
-    //void readAllRegs();
+    void readAllRegs();
     //int readStatus();
 
     uint8_t myGroup;
@@ -84,6 +84,7 @@ class RF69A {
     void writeReg (uint8_t addr, uint8_t value);
     uint8_t readReg (uint8_t addr);
     void setMode (uint8_t newMode);
+    void printHex(int val);
 
     volatile uint8_t mode;
 
@@ -109,7 +110,7 @@ static const uint8_t configRegsOOK [] = {
   0x1D, 0x38, // OOK fixed thresh
   0x1E, 0x00, // No auto AFC
   0x25, 0x80, // Dio 0: RSSI 1: Dclk 2: Data 3: RSSI
-  //0x26, 0x37, // Dio 5: ModeReady, CLKOUT = OFF
+  0x26, 0x07, // CLKOUT = OFF
   0x29, 0xFF, // RssiThresh: lowest possible threshold to start receive
   0x2E, 0x00, // SyncConfig = sync off
   //0x58, 0x2D, // Sensitivity boost (TestLNA)
@@ -406,8 +407,8 @@ void RF69A::receiveOOK_forever(ooktrans_cb processBit) {
       }
       if (rssi > 200) {
         slicethd = 188;
-        Serial.print(F("PEAK-THD: outlier rssi "));
-        Serial.println(rssi);
+        //Serial.print(F("PEAK-THD: outlier rssi "));
+        //Serial.println(rssi);
       }
       if (slicethd < fixthd) slicethd = fixthd;
     }
@@ -477,23 +478,28 @@ void RF69A::sendook(uint8_t header, const void* ptr, int len) {
 }
 
 ////for debugging
-//void RF69A::readAllRegs() {
-//    uint8_t regVal;
-//
-//    Serial.print( "     0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  D"
-//    "\r\n00: 00");
-//    for (uint8_t regAddr = 1; regAddr <= 0x4F; regAddr++) {
-//        spi.enable();
-//        spi.transfer(regAddr & 0x7f);   // send address + r/w bit
-//        regVal = spi.transfer(0);
-//        spi.disable();
-//
-//        if (regAddr % 16 == 0)
-//        Serial.print( "\r\n%02X:", regAddr);
-//        Serial.print( " %02x", regVal);
-//    }
-//    Serial.print( "\r\n");
-//}
+void RF69A::printHex(int val) {
+    if (val < 16)
+      Serial.print('0');
+    Serial.print(val, HEX);
+  }
+void RF69A::readAllRegs() {
+    uint8_t regVal;
+
+    Serial.println("     0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  D");
+    Serial.print("00: 00");
+    for (uint8_t regAddr = 1; regAddr <= 0x4F; regAddr++) {
+        regVal = readReg(regAddr);
+        if (regAddr % 16 == 0) {
+          Serial.println();
+          printHex(regAddr);
+        Serial.print(":");
+        }
+        Serial.print(" ");
+        printHex(regVal);
+    }
+    Serial.println();
+}
 
 // int RF69A::readStatus() {
 // uint8_t f1;
