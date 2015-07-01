@@ -173,4 +173,3 @@ void RF69RC<SPI>::transmitOOKOff() {
 	//this->setMode(MODE_RECEIVE);
 	this->setMode(MODE_STANDBY);
 }
-

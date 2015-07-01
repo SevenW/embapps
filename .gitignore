@@ -5,6 +5,7 @@
 *.elf
 *.hex
 *.bin
+*.launch
 
 ##eclipse IDE
 #.project

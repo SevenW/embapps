@@ -27,8 +27,8 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/embello-lib/sys-none}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/embello-lib/util}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/embello-lib/vendor}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;C:\ChibiStudio-old\tools\GNU Tools ARM Embedded\4.9 2014q4\arm-none-eabi\include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/embello-lib/vendor/lpcopen/inc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${picosStdInc}/&quot;"/>
 								</option>
 								<option id="org.eclipse.cdt.build.core.settings.holder.symbols.767285322" name="Symbols" superClass="org.eclipse.cdt.build.core.settings.holder.symbols" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="__GNUC__=1"/>
@@ -43,8 +43,8 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/embello-lib/sys-none}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/embello-lib/util}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/embello-lib/vendor}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;C:\ChibiStudio-old\tools\GNU Tools ARM Embedded\4.9 2014q4\arm-none-eabi\include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/embello-lib/vendor/lpcopen/inc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${picosStdInc}/&quot;"/>
 								</option>
 								<option id="org.eclipse.cdt.build.core.settings.holder.symbols.971973332" name="Symbols" superClass="org.eclipse.cdt.build.core.settings.holder.symbols" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="__GNUC__=1"/>
@@ -59,8 +59,8 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/embello-lib/sys-none}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/embello-lib/util}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/embello-lib/vendor}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;C:\ChibiStudio-old\tools\GNU Tools ARM Embedded\4.9 2014q4\arm-none-eabi\include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/embello-lib/vendor/lpcopen/inc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${picosStdInc}/&quot;"/>
 								</option>
 								<option id="org.eclipse.cdt.build.core.settings.holder.symbols.222705740" name="Symbols" superClass="org.eclipse.cdt.build.core.settings.holder.symbols" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="__GNUC__=1"/>
