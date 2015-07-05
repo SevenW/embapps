@@ -60,8 +60,10 @@ static const uint8_t configRegsCC[] = {
 		0x02, 0x00, // DataModul = packet mode, fsk
 		0x03, 0x06, // BitRateMsb, data rate = 20.3 khz
 		0x04, 0x28, // BitRateLsb, divider = 32 MHz / 650
-		0x05, 0x02, // FdevMsb = 45 KHz
-		0x06, 0xE1, // FdevLsb = 45 KHz
+		0x05, 0x01, // FdevMsb = 20 KHz
+		0x06, 0x48, // FdevLsb = 20 KHz
+		//0x05, 0x02, // FdevMsb = 45 KHz
+		//0x06, 0xE1, // FdevLsb = 45 KHz
 		//0x05, 0x09, // FdevMsb = 150 KHz
 		//0x06, 0x9B, // FdevLsb = 150 KHz
 		0x07, 0xD9, // FrfMsb, freq = 868.250 MHz
@@ -72,7 +74,8 @@ static const uint8_t configRegsCC[] = {
 		//TODO: AGC disrupts reception of FSK signal. Why?
 		//0x18, 0x80, // LNA variable gain, Z=200ohm
 		0x18, 0x81, // LNA fixed gain 1, Z=200ohm
-		0x19, 0x42, // RxBw 125 KHz
+		0x19, 0x43, // RxBw 62.5 KHz
+		//0x19, 0x42, // RxBw 125 KHz
 		//0x19, 0x41, // RxBw 250 KHz
 		//0x19, 0x48, // RxBw 400 KHz
 

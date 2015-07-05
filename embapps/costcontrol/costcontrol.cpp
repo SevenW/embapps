@@ -155,7 +155,7 @@ static void descramb(uint8_t* buff, uint16_t len) {
 	while (len--) {
 		inpbyte = *buff;
 		for (bit = 0; bit < 8; ++bit) {
-			// RFM12B receives MSBit first into bytes:
+			// RFM69 receives MSBit first into bytes:
 			ibit = (inpbyte & 0x80) >> 7;
 			obit = ibit ^ (count1bits(scramshift & SCRAMPOLY) & 0x01);
 			scramshift = scramshift << 1 | ibit;
@@ -441,11 +441,11 @@ int main() {
 	printf("\n[costcontrol] dev %x node %d\n", devId, nodeId);
 	printf("Cost Control RT-110 / Energy Count 3000 receiver\n");
 
-	rf.init(nodeId, 42, 868285);
+	rf.init(nodeId, 42, 868300);
 	//rf.encrypt("mysecret");
 	rf.txPower(0); // 0 = min .. 31 = max
 
-	rf.initCCreceive(868295); //63 = catch all packets, 0xAA is EC3000 syncword
+	rf.initCCreceive(868313); //63 = catch all packets, 0xAA is EC3000 syncword
 	rf.setBitrate(20000);
 	rf.setPayloadLen(56);
 
@@ -494,7 +494,7 @@ int main() {
 				rf.init(nodeId, 42, 868300);
 				rf.send(0, txBuf, cnt);
 				//Switch back to Cost Control / EC3K receive mode
-				rf.initCCreceive(868295); //63 = catch all packets, 0xAA is EC3000 syncword
+				rf.initCCreceive(868299); //868299kHz is optimal according to AFC.
 				rf.setBitrate(20000);
 				rf.setPayloadLen(56);
 
