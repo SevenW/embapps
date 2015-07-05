@@ -5,6 +5,11 @@
 // Copyright   : (c) 2015 sevenwatt.com
 // Description : Receive Cost Control RT-110 or Energy Count 3000 packets
 //             : and retransmit into JeeNode network, and log to console.
+//             : mainly based on the work of Thomas Schulz:
+//             : http://forum.jeelabs.net/comment/4972.html#comment-4972
+//             : http://forum.jeelabs.net/comment/6577.html#comment-6577
+//             : result formating by ohweh
+//             : http://www.fhemwiki.de/wiki/JeeLink
 //
 //============================================================================
 
