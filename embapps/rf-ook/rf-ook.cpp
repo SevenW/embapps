@@ -172,14 +172,14 @@ void processBit(uint16_t pulse_dur, uint8_t signal, uint8_t rssi) {
 
 void receiveOOK() {
 	//moving average buffer
-	uint8_t avg_len = 7;
+	uint8_t avg_len = 11;
 	uint32_t filter = 0;
 	uint32_t sig_mask = (1 << avg_len) - 1;
 
 	//Experimental: Fixed threshold
 	rfa.OOKthdMode(0x40); //0x00=fix, 0x40=peak, 0x80=avg
 	rfa.setBitrate(bitrate);
-	//rfa.setBitrate(3000);
+	rfa.setBitrate(5000);
 
 	rfa.setFrequency(frqkHz);
 	rfa.setBW(bw);
@@ -215,7 +215,8 @@ void receiveOOK() {
 	uint16_t flush_max = 10000 / tsample; //10ms
 	flush_max = 5000/tsample;
 	uint8_t last_steady_rssi = 0;
-	uint8_t rssi_q_off = 3;
+	//uint8_t rssi_q_off = 3;
+	uint8_t rssi_q_off = 2;
 	uint8_t rssi_q_len = avg_len + rssi_q_off + 1;
 	uint8_t rssi_q[rssi_q_len];
 	uint8_t rssi_qi = 0;
@@ -268,6 +269,8 @@ void receiveOOK() {
 
 		uint32_t ts_thdUpdNow = sampleTicks;
 
+		static uint32_t delay_rssi = 0;
+		delay_rssi++;
 		if (data_out != last_data) {
 			new_edge = sampleTicks;
 			processBit(tsample * (new_edge - last_edge), last_data,
@@ -277,12 +280,20 @@ void receiveOOK() {
 			last_data = data_out;
 			flush_cnt = 0;
 			flip_cnt++;
+
+			//TODO: Decide on best strategy to measure RSSI
+			delay_rssi = 0;
+			//last_steady_rssi = ~rfa.readRSSI();
 		} else if (flush_cnt == flush_max /* && !data_out */) {
 			//send fake pulse to notify end of transmission to decoders
 			processBit(tsample * (sampleTicks - last_edge), last_data, 0);
 			processBit(1, !last_data, 0);
-		} else
-			last_steady_rssi = delayed_rssi;
+		} else if (delay_rssi == 6) {
+			//read rssi in loop after flip ~25us delayed
+			//last_steady_rssi = ~rfa.readRSSI();
+		}
+		//TODO: Decide on best strategy to measure RSSI
+		last_steady_rssi = delayed_rssi;
 
 		flush_cnt++;
 
@@ -294,7 +305,7 @@ void receiveOOK() {
 //			rssimax = rssi;
 		//statistics update every millisecond
 		if ((sampleTicks - ts_rssi) > (40 /*1000 / tsample*/)) {
-			//rssi = ~rfa.readRSSI();
+			rssi = ~rfa.readRSSI();
 			sumrssi += rssi;
 			sumsqrssi += rssi * rssi;
 			nrssi++;

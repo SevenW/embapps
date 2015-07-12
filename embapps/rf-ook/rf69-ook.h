@@ -99,7 +99,7 @@ static const uint8_t configRegsOOK [] = {
   0x02, 0x68, // DataModul = conti mode, ook, no shaping
   0x03, 0x03, // BitRateMsb, data rate = 32768bps maxOOK
   0x04, 0xD1, // BitRateLsb, divider = 32 MHz / 650
-  0x0B, 0x20, // AfcCtrl, afclowbetaon
+  //0x0B, 0x20, // AfcCtrl, afclowbetaon
   0x18, 0x81, // LNA fixed highest gain, Z=200ohm
   0x19, 0x40, // RxBw DCC=4%, Man=00b Exp = 0 =>BWOOK=250.0kHz
   0x1B, 0x43, // OOK peak, 0.5dB once/8 chips (slowest)
@@ -111,7 +111,14 @@ static const uint8_t configRegsOOK [] = {
   0x29, 0xFF, // RssiThresh: lowest possible threshold to start receive
   0x2E, 0x00, // SyncConfig = sync off
   //0x58, 0x2D, // Sensitivity boost (TestLNA)
-  0x6F, 0x20, // TestDagc ...
+  //0x6F, 0x20, // TestDagc ...
+
+  0x0B, 0x00, // High M
+  0x58, 0x1B, // No Sensitivity boost (TestLNA)
+  //0x58, 0x2D, // Sensitivity boost (TestLNA)
+  0x6F, 0x30, // TestDagc ...
+  0x71, 0x00, // RegTestAfc
+
   0
 };
 
