@@ -51,6 +51,7 @@ protected:
 
 		PCFG2_RXRESTART = 1 << 2,
 	};
+	uint16_t fei;
 };
 
 // driver implementation
@@ -69,7 +70,8 @@ static const uint8_t configRegsCC[] = {
 		0x07, 0xD9, // FrfMsb, freq = 868.250 MHz
 		0x08, 0x13, // FrfMib, divider = 14221312
 		0x09, 0x00, // FrfLsb, step = 61.03515625
-		0x0B, 0x20, // Low M
+		//0x0B, 0x20, // Low M
+		0x0B, 0x00, // High M
 
 		//TODO: AGC disrupts reception of FSK signal. Why?
 		//0x18, 0x80, // LNA variable gain, Z=200ohm
@@ -80,11 +82,11 @@ static const uint8_t configRegsCC[] = {
 		//0x19, 0x48, // RxBw 400 KHz
 
 		//0x1A, 0x41, // AfcBw 250 KHz - Too noise for good AFC?
-		0x1A, 0x43, // AfcBw 2 = 125 KHz 3= 62khz 4=31khz
+		0x1A, 0x42, // AfcBw 2 = 125 KHz 3= 62khz 4=31khz
 
 		//TODO: AFC disrupts reception of FSK signal, but less then AGC. Why?
-		//0x1E, 0x0C, // AfcAutoclearOn, AfcAutoOn
-		0x1E, 0x00, // No auto AFC
+		0x1E, 0x0C, // AfcAutoclearOn, AfcAutoOn
+		//0x1E, 0x00, // No auto AFC
 
 		0x26, 0x07, // disable clkout
 		0x29, 0xA8, // RssiThresh -80 dB
@@ -100,6 +102,11 @@ static const uint8_t configRegsCC[] = {
 		0x33, 0xAC, //
 		//0x34, 0xD2, // 0xD2 descrambles to HDLC code 0x7E
 
+//		//0x2E, 0x00, // SyncConfig = sync off
+//		0x2E, 0x88, // SyncConfig = sync on, sync size = 2, tol = 0
+//		0x2F, 0xD3, // SyncValues = 0x13, 0xF1, 0x85, 0xD3, 0xAC
+//		0x30, 0xAC, //
+
 		//TODO: Fixed packet lens fails to generate PayloadReady interrupt! Why?
 		0x37, 0x00, // PacketConfig1 = variable, no DC-free, no filtering
 		//0x37, 0x88, // PacketConfig1 = fixed, no DC-free, no filtering
@@ -107,8 +114,9 @@ static const uint8_t configRegsCC[] = {
 		0x38, 0x38, // PayloadLength = 41 payload + 2 ctrl + 3-4 postamble + 8 stuffing
 		0x3C, 0x8F, // FifoTresh, not empty, level 15
 		0x3D, 0x12, // 0x10, // PacketConfig2, interpkt = 1, autorxrestart on
-		0x6F, 0x20, // TestDagc ...
-		0x71, 0x02, // RegTestAfc
+		//0x6F, 0x20, // TestDagc Low M
+		0x6F, 0x30, // TestDagc High M
+		//0x71, 0x05, // RegTestAfc Low M F-offset in 488Hz steps
 		0 };
 
 //template<typename SPI>
@@ -175,6 +183,9 @@ int RF69CC<SPI>::receive_fixed(void* ptr, int len) {
 				this->afc |= this->readReg(REG_AFCLSB);
 				printf("RSSI %d, LNA %d, AFC %d\r\n", this->rssi, this->lna,
 						this->afc);
+				this->fei = this->readReg(REG_FEIMSB) << 8;
+				this->fei |= this->readReg(REG_FEILSB);
+				printf("FEI %d\r\n", this->fei);
 #endif
 			}
 		}

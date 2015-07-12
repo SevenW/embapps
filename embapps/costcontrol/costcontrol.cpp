@@ -445,7 +445,7 @@ int main() {
 	//rf.encrypt("mysecret");
 	rf.txPower(0); // 0 = min .. 31 = max
 
-	rf.initCCreceive(868313); //63 = catch all packets, 0xAA is EC3000 syncword
+	rf.initCCreceive(868299); //63 = catch all packets, 0xAA is EC3000 syncword
 	rf.setBitrate(20000);
 	rf.setPayloadLen(56);
 
