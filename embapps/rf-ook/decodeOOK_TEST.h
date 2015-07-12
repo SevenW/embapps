@@ -1,6 +1,10 @@
 /// @file
 /// Generalized decoder framework for 868 MHz and 433 MHz OOK signals.
 
+
+static uint16_t long1width = 500;
+static uint16_t long0width = 500;
+
 /// This is the general base class for implementing OOK decoders.
 class DecodeOOK {
   protected:
@@ -16,8 +20,6 @@ class DecodeOOK {
     uint16_t pulseON[max_pulse_cnt];
     uint16_t pulseOFF[max_pulse_cnt];
     uint8_t pulse_cnt;
-    uint16_t long1width = 500;
-    uint16_t long0width = 500;
 
 
 
@@ -138,37 +140,38 @@ class DecodeOOK {
           }
         }
       }
-      chprintf(serial, "\r\n");
+      //chprintf(serial, "\r\n");
+      printf("\r\n");
       for (uint8_t j=0; j<4; j++) {
           if (cnt[j] == 0)
               avg[j]=min[j]=max[j]=0;
           else
               avg[j] /= cnt[j];
-          chprintf(serial, "%s: %4d-%4d-%4d #%2d\r\n", names[j], min[j], avg[j], max[j], cnt[j]);
+          //chprintf(serial, "%s: %4d-%4d-%4d #%2d\r\n", names[j], min[j], avg[j], max[j], cnt[j]);
+          printf("%s: %4d-%4d-%4d #%2d\r\n", names[j], min[j], avg[j], max[j], cnt[j]);
       }
       return;
     }
 
   private:
-    char es = 0;
+    char es;
 
   public:
     enum { UNKNOWN, T0, T1, T2, T3, OK, DONE };
     typedef void (*decoded_cb)(DecodeOOK*);
 
-    char* tag;
-    uint8_t id = 0;
-    decoded_cb decoded = NULL;
+    const char* tag;
+    uint8_t id;
+    decoded_cb decoded;
 
     DecodeOOK (uint8_t gap = 5, uint8_t count = 0)
-      : lastCrc (0), lastTime (0), repeats (0), minGap (gap), minCount (count)
+      : es(0), id(0), tag(&es), decoded(NULL), lastCrc (0), lastTime (0), repeats (0), minGap (gap), minCount (count)
     {
       resetDecoder();
-      tag = &es;
     }
 
-    DecodeOOK (uint8_t nid, char* ntag, decoded_cb cb, uint8_t gap = 5, uint8_t count = 0)
-      : lastCrc (0), lastTime (0), repeats (0), minGap (gap), minCount (count), id (nid), tag (ntag), decoded (cb)
+    DecodeOOK (uint8_t nid, const char* ntag, decoded_cb cb, uint8_t gap = 5, uint8_t count = 0)
+      : es(0), lastCrc (0), lastTime (0), repeats (0), minGap (gap), minCount (count), id (nid), tag (ntag), decoded (cb)
     {
       resetDecoder();
     }
@@ -189,13 +192,17 @@ class DecodeOOK {
 
             //dump pulse buffers
             for (int i=0; i<pulse_cnt; i++) {
-                chprintf(serial, "%d,", pulseON[i]);
+                //chprintf(serial, "%d,", pulseON[i]);
+               printf("%d,", pulseON[i]);
             }
-            chprintf(serial, "\r\n");
+            //chprintf(serial, "\r\n");
+            printf("\r\n");
             for (int i=0; i<pulse_cnt; i++) {
-                chprintf(serial, "%d,", pulseOFF[i]);
+                //chprintf(serial, "%d,", pulseOFF[i]);
+               printf("%d,", pulseOFF[i]);
             }
-            chprintf(serial, "\r\n");
+            //chprintf(serial, "\r\n");
+            printf("\r\n");
             break;
         }
       return state == DONE;

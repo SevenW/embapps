@@ -110,25 +110,24 @@ class DecodeOOK {
     }
 
   private:
-    char es = 0;
+    char es;
 
   public:
     enum { UNKNOWN, T0, T1, T2, T3, OK, DONE };
     typedef void (*decoded_cb)(DecodeOOK*);
 
-    char* tag;
-    uint8_t id = 0;
-    decoded_cb decoded = NULL;
+    const char* tag;
+    uint8_t id;
+    decoded_cb decoded;
 
     DecodeOOK (uint8_t gap = 5, uint8_t count = 0)
-      : lastCrc (0), lastTime (0), repeats (0), minGap (gap), minCount (count)
+      : es(0), id(0), tag(&es), decoded(NULL), lastCrc (0), lastTime (0), repeats (0), minGap (gap), minCount (count)
     {
       resetDecoder();
-      tag = &es;
     }
 
-    DecodeOOK (uint8_t nid, char* ntag, decoded_cb cb, uint8_t gap = 5, uint8_t count = 0)
-      : lastCrc (0), lastTime (0), repeats (0), minGap (gap), minCount (count), id (nid), tag (ntag), decoded (cb)
+    DecodeOOK (uint8_t nid, const char* ntag, decoded_cb cb, uint8_t gap = 5, uint8_t count = 0)
+      : es(0), lastCrc (0), lastTime (0), repeats (0), minGap (gap), minCount (count), id (nid), tag (ntag), decoded (cb)
     {
       resetDecoder();
     }

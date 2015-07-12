@@ -9,7 +9,7 @@
 class WS249 : public DecodeOOK {
   public:
     WS249 () {}
-    WS249 (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
+    WS249 (uint8_t id, const char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
 
     virtual int8_t decode (uint16_t width) {
       uint8_t is_low = !last_signal;
@@ -64,7 +64,7 @@ class Philips : public DecodeOOK {
   public:
     Philips () {
     }
-    Philips (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
+    Philips (uint8_t id, const char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
 
     virtual int8_t decode (uint16_t width) {
       if (1400 < width && width < 2600 || 5400 < width && width < 6900) {
@@ -127,7 +127,7 @@ class OregonDecoderV1 : public DecodeOOK {
     uint8_t syncs;
   public:
     OregonDecoderV1 () {}
-    OregonDecoderV1 (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
+    OregonDecoderV1 (uint8_t id, const char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
 
     // add one bit to the packet data buffer
     virtual void gotBit (int8_t value) {
@@ -152,7 +152,7 @@ class OregonDecoderV1 : public DecodeOOK {
       //and long pulse in on and off states.
       //if (width<940) {Serial.print(".");};
       if (940 <= width && width < 7400) {
-        uint8_t w = width >= 2200;
+        uint8_t w = (last_signal ? (width >= 2400) : (width>=1950));
         uint8_t s = width >= 3700;
         //Serial.print(" ");
         //Serial.print(width);
@@ -160,21 +160,21 @@ class OregonDecoderV1 : public DecodeOOK {
         switch (state) {
           case UNKNOWN:
             if (s != 0) {
-              //to enter here, the flip>=22  (11 one bits after first one bitfrom pre-ample
-              //however, at the start of transmition, the receiver may adapt its gain and
-              //mis a couple of bits in pre-ample.
+              //to enter here, the flip>=22  (11 one bits after first one bit from preamble
+              //however, at the start of transmission, the receiver may adapt its gain and
+              //miss a couple of bits in pre-ample.
               //therefore, no test on flips.
               syncs++;
               //Serial.print("S");
               if (syncs >= 3) {
-                ////trigger logic analyzer
+                ////trigger logic analyser
                 //digitalWrite(11, 1);
 
                 //Serial.print("\n");
                 //Serial.print("sync ");
                 syncs = 0;
                 resetDecoder();
-                if (width < 5900) {
+                if (width < 5940) {
                   //first bit will become 1, we are half-way.
                   flip = 1;
                   state = T0;
@@ -224,7 +224,7 @@ class OregonDecoderV1 : public DecodeOOK {
 class OregonDecoderV2 : public DecodeOOK {
   public:
     OregonDecoderV2() {}
-    OregonDecoderV2 (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
+    OregonDecoderV2 (uint8_t id, const char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
 
     // add one bit to the packet data buffer
     virtual void gotBit (int8_t value) {
@@ -287,7 +287,7 @@ class OregonDecoderV2 : public DecodeOOK {
 class OregonDecoderV3 : public DecodeOOK {
   public:
     OregonDecoderV3() {}
-    OregonDecoderV3 (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
+    OregonDecoderV3 (uint8_t id, const char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
 
     // add one bit to the packet data buffer
     virtual void gotBit (int8_t value) {
@@ -338,7 +338,7 @@ class OregonDecoderV3 : public DecodeOOK {
 class OregonDecoder : public DecodeOOK {
   public:
     OregonDecoder () {}
-    OregonDecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
+    OregonDecoder (uint8_t id, const char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
 
     virtual int8_t decode (uint16_t width) {
       if (200 <= width && width < 1200) {
@@ -379,7 +379,7 @@ class CrestaDecoder : public DecodeOOK {
     // http://members.upc.nl/m.beukelaar/Crestaprotocol.pdf
   public:
     CrestaDecoder () {}
-    CrestaDecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
+    CrestaDecoder (uint8_t id, const char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
 
     virtual int8_t decode (uint16_t width) {
       if (200 <= width && width < 1300) {
@@ -416,11 +416,9 @@ class CrestaDecoder : public DecodeOOK {
 
 /// OOK decoder for Klik-Aan-Klik-Uit devices.
 class KakuDecoder : public DecodeOOK {
-  private:
-    uint8_t bitval = 0;
   public:
     KakuDecoder () {}
-    KakuDecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
+    KakuDecoder (uint8_t id, const char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
 
     virtual int8_t decode (uint16_t width) {
       //if ((180 <= width && width < 450) || (950 <= width && width < 1250)) {
@@ -478,7 +476,7 @@ class KakuADecoder : public DecodeOOK {
     KakuADecoder () {
       clearBackBuffer();
     }
-    KakuADecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {
+    KakuADecoder (uint8_t id, const char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {
       clearBackBuffer();
     }
 
@@ -551,7 +549,7 @@ class KakuADecoder : public DecodeOOK {
 class XrfDecoder : public DecodeOOK {
   public:
     XrfDecoder () {}
-    XrfDecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
+    XrfDecoder (uint8_t id, const char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
 
     // see also http://davehouston.net/rf.htm
     virtual int8_t decode (uint16_t width) {
@@ -586,7 +584,7 @@ class XrfDecoder : public DecodeOOK {
 class HezDecoder : public DecodeOOK {
   public:
     HezDecoder () {}
-    HezDecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
+    HezDecoder (uint8_t id, const char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
 
     // see also http://homeeasyhacking.wikia.com/wiki/Home_Easy_Hacking_Wiki
     virtual int8_t decode (uint16_t width) {
@@ -608,7 +606,7 @@ class HezDecoder : public DecodeOOK {
 class ElroDecoder : public DecodeOOK {
   public:
     ElroDecoder () {}
-    ElroDecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
+    ElroDecoder (uint8_t id, const char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
 
     virtual int8_t decode (uint16_t width) {
       if (50 <= width && width < 600) {
@@ -662,7 +660,7 @@ class ElroDecoder : public DecodeOOK {
 class FlamingoDecoder : public DecodeOOK {
   public:
     FlamingoDecoder () {}
-    FlamingoDecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
+    FlamingoDecoder (uint8_t id, const char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
 
     virtual int8_t decode (uint16_t width) {
       if ((width > 740 && width < 780) || (width > 2650 && width < 2750) ||
@@ -682,7 +680,7 @@ class FlamingoDecoder : public DecodeOOK {
 class SmokeDecoder : public DecodeOOK {
   public:
     SmokeDecoder () {}
-    SmokeDecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
+    SmokeDecoder (uint8_t id, const char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
 
     virtual int8_t decode (uint16_t width) {
       if (width > 20000 && width < 21000 || width > 6900 && width < 7000 ||
@@ -702,7 +700,7 @@ class SmokeDecoder : public DecodeOOK {
 class ByronbellDecoder : public DecodeOOK {
   public:
     ByronbellDecoder () {}
-    ByronbellDecoder (uint8_t id, char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
+    ByronbellDecoder (uint8_t id, const char* tag, decoded_cb cb) : DecodeOOK (id, tag, cb) {}
 
     virtual int8_t decode (uint16_t width) {
       if (660 < width && width < 715 || 5100 < width && width < 5400) {
