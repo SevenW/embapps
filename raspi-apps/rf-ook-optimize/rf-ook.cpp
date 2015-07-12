@@ -33,7 +33,8 @@ uint32_t frqkHz = 433920;
 uint32_t frqkHz = 868280;
 #endif
 
-uint8_t fixthd = 60;
+uint8_t g_rssiavg = 0;
+uint8_t fixthd = 72;
 uint32_t bitrate = 32768; //max OOK 32768bps, max FSK 300000bps
 uint8_t bw = 16; //0=250kHz, 8=200kHz, 16=167kHz, 1=125kHz, 9=100kHz, 17=83kHz 2=63kHz, 10=50kHz
 
@@ -104,6 +105,48 @@ uint8_t rssi_buf_i = 0;
 //uint8_t rssi_b[4096];
 //uint16_t rssi_bi = 0;
 
+
+//Optimize
+//   BitRate
+//   Thresholding
+//   Moving Avg filter len
+//   RXBW
+int fl = 7;
+int sd = 3;
+uint8_t delta_thd = 6;
+uint32_t bitrates[] = {32768, 20000, 12000, 8000, 3000, 1000, 0};
+uint8_t bri = 0;
+
+void receiveOOK(uint32_t br, uint8_t fl, uint8_t bw, uint8_t sdf);
+
+void receiveOOK() {
+	// while(true) {
+		// while (bitrates[bri] != 0) {
+			// bitrate = bitrates[bri++];
+			// for (fl = 13; fl > 0; fl -= 4) {
+				// for (sd = 3; sd > 1; sd--) {
+					// printf("scan br%d, BW%d, FL%d, SD%d\r\n", bitrate, bw, fl, sd);
+					// receiveOOK(bitrate, fl, bw, sd);
+				// }
+			// }
+			
+		// }
+		// bri = 0;
+		// printf("Finished full loop\r\n");
+	// }
+	while(true) {
+			bitrate = 3000;
+			fl = 13;
+			sd = 2;
+				for ( fixthd = 64; fixthd < 79; fixthd += 2) {
+					printf("scan br%d, BW%d, FL%d, THD%d\r\n", bitrate, bw, fl, fixthd);
+					receiveOOK(bitrate, fl, bw, sd);
+				}
+		printf("Finished full loop\r\n");
+	}
+}
+
+
 void printRSSI() {
 	uint16_t avgonrssi = 0;
 	uint16_t avgoffrssi = 0;
@@ -112,7 +155,7 @@ void printRSSI() {
 		avgoffrssi += rssi_buf[i + 1];
 		//        printf( " (%d/%d)", rssi_buf[i+1],rssi_buf[i]);
 	}
-	printf(" (%d/%d)", avgoffrssi >> (RSSI_BUF_EXP - 1),
+	printf(" (,%d,%d,)", avgoffrssi >> (RSSI_BUF_EXP - 1),
 	avgonrssi >> (RSSI_BUF_EXP - 1));
 }
 
@@ -123,13 +166,14 @@ void printOOK(class DecodeOOK* decoder) {
 	static uint32_t last_print = 0;
 	static uint8_t mesgcnt = 1;
 	uint32_t now = millis();
+	printf("BR,%d, BW,%d, FL,%d, SD,%d, THD,%d, NS,%d,", bitrate, bw, fl, sd, fixthd, g_rssiavg);
 	if (now - last_print < 1000) {
 		mesgcnt++;
-		printf("%d     %3d %1d ", now, now - last_print, mesgcnt);
+		printf("%d,  ,   %3d, %1d, ", now, now - last_print, mesgcnt);
 		//printf("%12d ", now);
 	} else {
 		mesgcnt = 1;
-		printf("\r\n%d %3d     %1d ", now, (now - last_print) / 1000 ,mesgcnt);
+		printf("%d, %3d,  ,   %1d, ", now, (now - last_print) / 1000 ,mesgcnt);
 		//printf("\r\n%12d ", now);
 	}
 	last_print = now;
@@ -143,7 +187,7 @@ void printOOK(class DecodeOOK* decoder) {
 	//rf12_settings_text(textbuf);
 	//Serial.print(textbuf);
 	//Serial.print(' ');
-	printf("%s ", decoder->tag);
+	printf("%s, ", decoder->tag);
 	//Serial.print(' ');
 	for (uint8_t i = 0; i < pos; ++i) {
 		printf("%02x", data[i]);
@@ -177,15 +221,16 @@ void processBit(uint16_t pulse_dur, uint8_t signal, uint8_t rssi) {
 	}
 }
 
-void receiveOOK() {
+
+void receiveOOK(uint32_t br, uint8_t fl, uint8_t bw, uint8_t sdf) {
 	//moving average buffer
-	uint8_t avg_len = 7;
+	uint8_t avg_len = fl;
 	uint32_t filter = 0;
 	uint32_t sig_mask = (1 << avg_len) - 1;
 
 	//Experimental: Fixed threshold
 	rfa.OOKthdMode(0x40); //0x00=fix, 0x40=peak, 0x80=avg
-	rfa.setBitrate(bitrate);
+	rfa.setBitrate(br);
 	//rfa.setBitrate(3000);
 
 	rfa.setFrequency(frqkHz);
@@ -231,7 +276,9 @@ void receiveOOK() {
 	uint8_t rssi = ~rfa.readRSSI();
 	uint32_t thdUpd = millis();
 	uint32_t thdUpdCnt = 0;
-	while (true) {
+	
+	uint32_t startloop = millis();
+	while (millis()-startloop < 300000) {
 		//rssi = ~rfa.readRSSI();
 
 		//		rssi_b[rssi_bi++] = rssi;
@@ -338,19 +385,21 @@ void receiveOOK() {
 			}
 			//adapt rssi thd to noise level if variance is low
 			if (rssivar < 36) {
-				uint8_t delta_thd = 3 * stddev;
-				if (delta_thd < 6)
-				delta_thd = 6;
+				/*uint8_t*/ delta_thd = sd * stddev;
+				if (delta_thd < 3/*6*/)
+				delta_thd = 3/*6*/;
 				//if (delta_thd < 10)  delta_thd = 10;
 				//const uint8_t delta_thd = 4;
-				if (fixthd != rssiavg + delta_thd) {
-					fixthd = rssiavg + delta_thd;
-					//if (fixthd < 70) fixthd = 70;
-					rfa.setThd(fixthd);
-					//printf( "THD:%3d\r\n", fixthd);
-				} else {
-					//printf( "THD:keep\r\n");
-				}
+//TODO: Repair after test
+g_rssiavg = rssiavg;
+				// if (fixthd != rssiavg + delta_thd) {
+					// fixthd = rssiavg + delta_thd;
+					// //if (fixthd < 70) fixthd = 70;
+					// rfa.setThd(fixthd);
+					// //printf( "THD:%3d\r\n", fixthd);
+				// } else {
+					// //printf( "THD:keep\r\n");
+				// }
 			} else {
 				//printf( "THD:keep\r\n");
 				//printf( "RSSI: %3d, %5d\r\n", rssiavg, rssivar);

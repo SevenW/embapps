@@ -2,9 +2,6 @@
 /// Generalized decoder framework for 868 MHz and 433 MHz OOK signals.
 
 
-static uint16_t long1width = 500;
-static uint16_t long0width = 500;
-
 /// This is the general base class for implementing OOK decoders.
 class DecodeOOK {
   protected:
@@ -14,13 +11,6 @@ class DecodeOOK {
     uint8_t repeats, minGap, minCount;
     uint8_t last_signal;
     uint16_t last_width;
-
-    //for logging pulse lengths
-#define max_pulse_cnt 150
-    uint16_t pulseON[max_pulse_cnt];
-    uint16_t pulseOFF[max_pulse_cnt];
-    uint8_t pulse_cnt;
-
 
 
     // gets called once per incoming pulse with the width in us
@@ -82,6 +72,22 @@ class DecodeOOK {
         data[i] = (data[i] << 4) | (data[i] >> 4);
     }
 
+    uint16_t crc16_update(uint16_t crc, uint8_t a)
+    {
+      int i;
+
+      crc ^= a;
+      for (i = 0; i < 8; ++i)
+      {
+        if (crc & 1)
+          crc = (crc >> 1) ^ 0xA001;
+        else
+          crc = (crc >> 1);
+      }
+
+      return crc;
+    }
+
     //  bool checkRepeats () {
     //    // calculate the checksum over the current packet
     //    uint16_t crc = ~0;
@@ -101,56 +107,6 @@ class DecodeOOK {
 
     bool checkRepeats () {
       return 1;
-    }
-
-    void print_stats () {
-      //print some statistics
-      //array L1, L0, S1, S0
-      char*names[] = {"L1", "L0", "S1", "S0"};
-      uint16_t val[4] = {0, 0, 0, 0};
-      uint32_t avg[4] = {0, 0, 0, 0};
-      uint16_t min[4] = {65000, 65000, 65000, 65000};
-      uint16_t max[4] = {0, 0, 0, 0};
-      uint8_t cnt[4] = {0, 0, 0, 0};
-      for (int i = 0; i < 4; i++) {
-        min[i] = 65000;
-        max[i] = 0;
-        avg[i] = 0;
-        cnt[i] = 0;
-      }
-      //skip first and last
-      for (int i = 1; i < pulse_cnt - 1; i++) {
-        val[0] = val[2] = pulseON[i];
-        val[1] = val[3] = pulseOFF[i];
-
-        for (uint8_t j = 0; j < 2; j++) {
-          if (val[j] > long1width) {
-            avg[j] += val[j];
-            cnt[j]++;
-            if (min[j] > val[j]) min[j] = val[j];
-            if (max[j] < val[j]) max[j] = val[j];
-          }
-        }
-        for (uint8_t j = 2; j < 4; j++) {
-          if (val[j] <= long0width) {
-            avg[j] += val[j];
-            cnt[j]++;
-            if (min[j] > val[j]) min[j] = val[j];
-            if (max[j] < val[j]) max[j] = val[j];
-          }
-        }
-      }
-      //chprintf(serial, "\r\n");
-      printf("\r\n");
-      for (uint8_t j=0; j<4; j++) {
-          if (cnt[j] == 0)
-              avg[j]=min[j]=max[j]=0;
-          else
-              avg[j] /= cnt[j];
-          //chprintf(serial, "%s: %4d-%4d-%4d #%2d\r\n", names[j], min[j], avg[j], max[j], cnt[j]);
-          printf("%s: %4d-%4d-%4d #%2d\r\n", names[j], min[j], avg[j], max[j], cnt[j]);
-      }
-      return;
     }
 
   private:
@@ -186,23 +142,6 @@ class DecodeOOK {
             while (bits)
               gotBit(0); // padding
             state = checkRepeats() ? DONE : UNKNOWN;
-
-            //print stats
-            //print_stats();
-
-            //dump pulse buffers
-            for (int i=0; i<pulse_cnt; i++) {
-                //chprintf(serial, "%d,", pulseON[i]);
-               printf("%d,", pulseON[i]);
-            }
-            //chprintf(serial, "\r\n");
-            printf("\r\n");
-            for (int i=0; i<pulse_cnt; i++) {
-                //chprintf(serial, "%d,", pulseOFF[i]);
-               printf("%d,", pulseOFF[i]);
-            }
-            //chprintf(serial, "\r\n");
-            printf("\r\n");
             break;
         }
       return state == DONE;
@@ -210,27 +149,6 @@ class DecodeOOK {
 
     virtual bool nextPulse (uint16_t width, uint8_t signal) {
       last_signal = signal;
-      if (pulse_cnt < max_pulse_cnt) {
-        if (signal) {
-          pulseON[pulse_cnt] = width;
-        } else {
-          pulseOFF[pulse_cnt++] = width;
-        }
-        //        if (pulse_cnt>=176 || (width == 1 and pulse_cnt > 10)) {
-        //            //print_stats();
-        //                            //dump pulse buffers
-        //                            for (int i=0; i<pulse_cnt; i++) {
-        //                                printf("%d,", pulseON[i]);
-        //                            }
-        //                            printf("\r\n");
-        //                            for (int i=0; i<pulse_cnt; i++) {
-        //                                printf("%d,", pulseOFF[i]);
-        //                            }
-        //                            printf("\r\n");
-        //            pulse_cnt=0;
-        //        }
-        //        if (width == 1) pulse_cnt=0;
-      }
       return DecodeOOK::nextPulse(width);
     }
 
@@ -243,8 +161,9 @@ class DecodeOOK {
     {
       total_bits = bits = pos = flip = 0;
       state = UNKNOWN;
-
-      pulse_cnt = 0;
     }
 };
+
+typedef void (*decoded_cb)(DecodeOOK*);
+
 
