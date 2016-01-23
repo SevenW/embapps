@@ -146,6 +146,25 @@ void stopOOK() {
 	}
 }
 
+static void testcmd(uint16_t counter, uint8_t power, uint8_t unused) {
+	uint8_t sum = /*6 +*/ (counter >> 8) + counter + power + unused;
+
+	for (uint8_t i = 0; i < 3; ++i) {
+		startOOK(5000); //PACKET mode: 200us (5000bps) largest common divisor
+		fs20sendBits(1, 13);
+		fs20sendBits(counter >> 8, 8);
+		fs20sendBits(counter & 0xFF, 8);
+		fs20sendBits(power, 8);
+		fs20sendBits(unused, 8);
+		fs20sendBits(sum, 8);
+		fs20sendBits(0, 1);
+		stopOOK();
+		delay = 880; //8.8ms = 1000 beats of 10us
+		while (delay)
+			;
+	}
+}
+
 static void fs20cmd(uint16_t house, uint8_t addr, uint8_t cmd) {
 	uint8_t sum = 6 + (house >> 8) + house + addr + cmd;
 	for (uint8_t i = 0; i < 3; ++i) {
@@ -290,12 +309,25 @@ int main() {
 	}
 	rf.txPower(5); // 0 = min .. 31 = max
 
+//	while (true) {
+//		if (ticks > 500000) {
+//			printf("Send one at %d\n", ticks);
+//			fs20cmd(0x1000, 0x01, 0x12);
+//			ticks = 0;
+//		}
+//		chThdYield()
+//	}
+
+	uint16_t n = 0;
 	while (true) {
-		if (ticks > 500000) {
-			printf("Send one at %d\n", ticks);
-			fs20cmd(0x1000, 0x01, 0x12);
+		for (uint8_t p = 0; p<32; p++) {
+			rf.txPower(p);
+			while (ticks < 100000) {};
+			printf("Send #%d at P=%d\n", n, p);
+			testcmd(n, p, 0x00);
 			ticks = 0;
+			n++;
+			chThdYield()
 		}
-	chThdYield()
-}
+	}
 }
