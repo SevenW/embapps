@@ -9,10 +9,10 @@
 *.log
 
 ##eclipse IDE
-#.project
-#.cproject
+.project
+.cproject
 .metadata
-#.settings
+.settings
 
 raspi-apps/rf-ook-optimize
 
