@@ -1,16 +1,14 @@
-#TODO: Move -I vendor/lpcopen/inc into rules.mk
-LIBDIR = ../../embello/lib
-CFLAGS += -DCORE_M0PLUS
-CXXFLAGS += -DCORE_M0PLUS -I. -I$(LIBDIR)/vendor/lpcopen/inc
-ISPOPTS += -s
-LINK = LPC824.ld
-ARCH = lpc8xx
+BINARY = rf-ook
+V=1 #verbose make
+OBJS = main.o
 
-OBJS = rf-ook.o system_LPC8xx.o gcc_startup_lpc8xx.o \
-		uart.o printf.o printf-retarget.o
+OPENCM3_DIR = ../libopencm3
+LDSCRIPT = $(OPENCM3_DIR)/stm32l0xx8.ld
+SCRIPT_DIR = ..
+default: $(BINARY).bin
 
-default: isp
+#LDFLAGS = -fno-rtti
+CPPFLAGS = -fno-rtti
 
-#LIBDIR = ../../embello/lib
-SHARED = $(LIBDIR)/sys-none
-include $(SHARED)/rules.mk
+V=1 #verbose make
+include $(OPENCM3_DIR)/Makefile.include

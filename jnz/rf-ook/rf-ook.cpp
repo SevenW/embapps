@@ -2,21 +2,34 @@
 // Name        : rf-ook.cpp
 // Author      : SevenWatt
 // Version     : 1.0
-// Copyright   : sevenwatt.com (c) 2015
+// Copyright   : sevenwatt.com (c) 2015, 2016, 2017
 // Description : Receive and decode OOK signals from various sources
 //
 //============================================================================
 #define STATLOG 1
 
-#include "chip.h"
-#include "uart.h"
+#include <libopencm3/stm32/rcc.h>
+#include <libopencm3/cm3/systick.h>
+#include <libopencm3/stm32/gpio.h>
+#include <libopencm3/stm32/usart.h>
 #include <stdio.h>
+
+// defined in main.cpp
+extern int serial_getc ();
+extern uint32_t millis();
+extern uint32_t volatile ticks;
+
 #include "spi.h"
 #include "rf69.h"
 #include "rf69-ook.h"
 
 //configuration items
-uint8_t DIO2 = 15; //GPIO pin DIO2(=DATA), configured in main()
+//JNZ Rev3
+uint32_t DIO2_PORT = GPIOB; //GPIO port DIO2(=DATA)
+uint16_t DIO2_PIN  = GPIO4; //GPIO pin  DIO2(=DATA)
+//JNZ Rev4
+//uint32_t DIO2_PORT = GPIOC; //GPIO port DIO2(=DATA)
+//uint16_t DIO2_PIN  = GPIO14;  //or GPIO15 //GPIO pin  DIO2(=DATA)
 
 //#define FREQ_BAND 433
 #define FREQ_BAND 868
@@ -35,12 +48,12 @@ uint8_t bw = 16; //0=250kHz, 8=200kHz, 16=167kHz, 1=125kHz, 9=100kHz, 17=83kHz 2
 const uint8_t tsample = 25; //us samples
 uint32_t samplesSec = 1000000 / tsample;
 
-volatile uint32_t sampleTicks = 0;
-extern "C" void SysTick_Handler(void) {
-	sampleTicks++;
-}
+//volatile uint32_t ticks = 0;
+//extern "C" void SysTick_Handler(void) {
+//	ticks++;
+//}
 
-RF69A<SpiDev0> rfa;
+RF69A<SpiDev> rfa;
 #include "decodeOOK.h"
 //#include "decodeOOK_TEST.h"
 
@@ -115,7 +128,7 @@ void printOOK(class DecodeOOK* decoder) {
 
 	static uint32_t last_print = 0;
 	static uint8_t mesgcnt = 1;
-	uint32_t now = sampleTicks;
+	uint32_t now = ticks;
 	if (now - last_print < 40000) {
 		mesgcnt++;
 		printf("%d     %3d %1d ", now/40, (now - last_print)/40, mesgcnt);
@@ -187,7 +200,7 @@ void receiveOOK() {
 	rfa.readAllRegs();
 	uint8_t t_step = 1;
 	//rtcnt_t now = chSysGetRealtimeCounterX();
-	uint32_t soon = sampleTicks + t_step;
+	uint32_t soon = ticks + t_step;
 
 	uint32_t nrssi = 0;
 	//uint64_t sumrssi = 0;
@@ -205,9 +218,9 @@ void receiveOOK() {
 	uint16_t log = 0;
 	uint16_t log1 = 0;
 
-	uint32_t new_edge = sampleTicks;
+	uint32_t new_edge = ticks;
 	uint32_t last_edge = new_edge;
-	uint8_t last_data = LPC_GPIO_PORT->B[0][DIO2];
+	uint8_t last_data = (gpio_get(DIO2_PORT, DIO2_PIN)&DIO2_PIN) != 0;
 	//uint8_t last_data = ~rfa.readRSSI() > slicethd;
 
 	uint16_t flip_cnt = 0;
@@ -221,9 +234,9 @@ void receiveOOK() {
 	uint8_t rssi_q[rssi_q_len];
 	uint8_t rssi_qi = 0;
 
-	uint32_t ts_rssi = sampleTicks;
+	uint32_t ts_rssi = ticks;
 	uint8_t rssi = ~rfa.readRSSI();
-	uint32_t thdUpd = sampleTicks;
+	uint32_t thdUpd = ticks;
 	uint32_t thdUpdCnt = 0;
 	while (true) {
 		rssi = ~rfa.readRSSI();
@@ -244,8 +257,8 @@ void receiveOOK() {
 //		    log1=0;
 //		}
 
-
-		uint8_t data_in = LPC_GPIO_PORT->B[0][DIO2];
+		//printf( "%08X\r\n", gpio_get(DIO2_PORT, DIO2_PIN));
+		uint8_t data_in = (gpio_get(DIO2_PORT, DIO2_PIN)&DIO2_PIN) != 0;
 		//uint8_t data_in = rssi > slicethd;
 		filter = (filter << 1) | (data_in & 0x01);
 		//efficient bit count, from literature
@@ -267,12 +280,12 @@ void receiveOOK() {
 		if (rssi_qi >= rssi_q_len)
 			rssi_qi = 0;
 
-		uint32_t ts_thdUpdNow = sampleTicks;
+		uint32_t ts_thdUpdNow = ticks;
 
 		static uint32_t delay_rssi = 0;
 		delay_rssi++;
 		if (data_out != last_data) {
-			new_edge = sampleTicks;
+			new_edge = ticks;
 			processBit(tsample * (new_edge - last_edge), last_data,
 					last_steady_rssi);
 			//if (log1 == 1) printf("%d\r\n", tsample *(new_edge - last_edge));
@@ -286,7 +299,7 @@ void receiveOOK() {
 			//last_steady_rssi = ~rfa.readRSSI();
 		} else if (flush_cnt == flush_max /* && !data_out */) {
 			//send fake pulse to notify end of transmission to decoders
-			processBit(tsample * (sampleTicks - last_edge), last_data, 0);
+			processBit(tsample * (ticks - last_edge), last_data, 0);
 			processBit(1, !last_data, 0);
 		} else if (delay_rssi == 6) {
 			//read rssi in loop after flip ~25us delayed
@@ -304,12 +317,12 @@ void receiveOOK() {
 //		if (rssi > rssimax)
 //			rssimax = rssi;
 		//statistics update every millisecond
-		if ((sampleTicks - ts_rssi) > (40 /*1000 / tsample*/)) {
+		if ((ticks - ts_rssi) > (40 /*1000 / tsample*/)) {
 			rssi = ~rfa.readRSSI();
 			sumrssi += rssi;
 			sumsqrssi += rssi * rssi;
 			nrssi++;
-			ts_rssi = sampleTicks;
+			ts_rssi = ticks;
 			if (rssi > rssimax)
 				rssimax = rssi;
 		}
@@ -403,125 +416,57 @@ void receiveOOK() {
 		}
 
 		//sleep at resolutions higher then system tick
-		while ((soon - sampleTicks > 0) && !((soon - sampleTicks) & 0x80000000)) {
+		while ((soon - ticks > 0) && !((soon - ticks) & 0x80000000)) {
 			//nop
 		}
-		soon = sampleTicks + t_step;
+		soon = ticks + t_step;
 	}
 	return;
 }
 
-#define SYSPLLCTRL_Val      0x24
-#define SYSPLLCLKSEL_Val    0
-#define MAINCLKSEL_Val      3
-#define SYSAHBCLKDIV_Val    2
+//for testing systick with LED blink
+uint32_t timertick = 0;
+uint32_t ticks_per_ms = 1000/tsample;
 
-static void setMaxSpeed() {
-	LPC_SYSCON->SYSPLLCLKSEL = SYSPLLCLKSEL_Val;    // select PLL input
-	LPC_SYSCON->SYSPLLCLKUEN = 0x01;                // update clock source
-	while (!(LPC_SYSCON->SYSPLLCLKUEN & 0x1))
-		;     // wait until updated
+void setup () {
+    //gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO15);   // rev1
+    gpio_mode_setup(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO5);    // rev3
+    //gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO8);    // rev4
 
-	LPC_SYSCON->SYSPLLCTRL = SYSPLLCTRL_Val;        // main clock is PLL out
-	LPC_SYSCON->PDRUNCFG &= ~(1 << 7);                // power-up SYSPLL
-	while (!(LPC_SYSCON->SYSPLLSTAT & 0x1))
-		;       // wait until PLL locked
+    //Configure DIO2 input
+    //Rev3: hardwired to PB4.
+    //Rev4: jumper to PC14 or PC15
+    gpio_mode_setup(DIO2_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, DIO2_PIN);
 
-	LPC_SYSCON->MAINCLKSEL = MAINCLKSEL_Val;      // select PLL clock output
-	LPC_SYSCON->MAINCLKUEN = 0x01;               // update MCLK clock source
-	while (!(LPC_SYSCON->MAINCLKUEN & 0x1))
-		;       // wait until updated
+    //Set systick to polling heartbeat.
+    //This code overrides 1ms systick from main.cpp
+    //millis() is no longer ticking milliseconds.
+	/* 32MHz 32000000 counts/second */
+    systick_set_clocksource(STK_CSR_CLKSOURCE_AHB);
+    /* SysTick interrupt every N clock pulses: set reload to N-1 */
+    systick_set_reload((32000000 / (1000000 / tsample))-1);
+    systick_interrupt_enable();
+    systick_counter_enable();
 
-	LPC_SYSCON->SYSAHBCLKDIV = SYSAHBCLKDIV_Val;
-}
-
-int main() {
-	for (int i = 0; i < 3000000; ++i)
-		__ASM("");
-	//setMaxSpeed();
-	//SystemCoreClockUpdate();
-
-	// the device pin mapping is configured at run time based on its id
-	uint16_t devId = LPC_SYSCON->DEVICEID;
-	// choose different node id's, depending on the chip type
-	uint8_t nodeId = 60;
-
-	// SPI pin assignment:
-	//  3: SPI0_SCK x         x         x
-	//  4: x        SPI0_SSEL SPI0_MISO SPI0_MOSI
-
-	switch (devId) {
-	case 0x8100:
-		nodeId = 10;
-		// disable SWCLK/SWDIO and RESET
-		LPC_SWM->PINENABLE0 = 0xffffffff;
-		// lpc810: sck=0p8, ssel=1p5, miso=2p4, mosi=5p1, dio2=3p3, tx=4p2
-		//SPI0
-		LPC_SWM->PINASSIGN[3] = 0x00FFFFFF;   // sck  -    -    -
-		LPC_SWM->PINASSIGN[4] = 0xFF010205;   // -    nss  miso mosi
-		//USART0
-		LPC_SWM->PINASSIGN[0] = 0xffffff04;
-		DIO2 = 3;
-		break;
-	case 0x8120:
-		nodeId = 12;
-		LPC_SWM->PINASSIGN[0] = 0xFFFF0004;
-		// jnp v2: sck 6, ssel 8, miso 11, mosi 9, irq 10, dio2 1p9
-		LPC_SWM->PINASSIGN[3] = 0x06FFFFFF;
-		LPC_SWM->PINASSIGN[4] = 0xFF080B09;
-		DIO2 = 1;
-		break;
-	case 0x8121:
-		nodeId = 13;
-		LPC_SWM->PINASSIGN[0] = 0xFFFF0004;
-		// A not working, but B is fine
-		// eb20soic A: sck 14, ssel 15, miso 12, mosi 13, irq 8
-		//LPC_SWM->PINASSIGN3 = 0x0EFFFFFF;
-		//LPC_SWM->PINASSIGN4 = 0xFF0F0C0D;
-		// eb20soic B: sck 12, ssel 13, miso 15, mosi 14, irq 8
-		LPC_SWM->PINASSIGN[3] = 0x0CFFFFFF;
-		LPC_SWM->PINASSIGN[4] = 0xFF0D0F0E;
-		break;
-	case 0x8122:
-		nodeId = 14;
-		LPC_SWM->PINASSIGN[0] = 0xFFFF0106;
-		// ea812: sck 12, ssel 13, miso 15, mosi 14
-		LPC_SWM->PINASSIGN[3] = 0x0CFFFFFF;
-		LPC_SWM->PINASSIGN[4] = 0xFF0D0F0E;
-		break;
-	case 0x8241:
-		nodeId = 23;
-		// ea824: sck 24, ssel 15, miso 25, mosi 26
-		LPC_SWM->PINASSIGN[0] = 0xFFFF1207;
-		LPC_SWM->PINASSIGN[3] = 0x18FFFFFF;
-		LPC_SWM->PINASSIGN[4] = 0xFF0F191A;
-		break;
-	case 0x8242:
-		nodeId = 24;
-		// jnp v3: sck 17, ssel 23, miso 9, mosi 8, irq 1, dio2 15p11
-		LPC_SWM->PINASSIGN[0] = 0xFFFF0004;
-		LPC_SWM->PINASSIGN[3] = 0x11FFFFFF;
-		LPC_SWM->PINASSIGN[4] = 0xFF170908;
-		DIO2 = 15;
-		break;
-	}
-
-	SysTick_Config(SystemCoreClock / (1000000 / tsample)); //tsample=25us
-
-	uart0Init(115200);
-	for (int i = 0; i < 10000; ++i)
-		__ASM("");
-	printf("\n[rf_ook] dev %x node %d\n", devId, nodeId);
-	printf("CoreClk %d, MainClk %d\n\n", SystemCoreClock,
-			SystemCoreClock * LPC_SYSCON->SYSAHBCLKDIV);
+    printf("\n[rf-ook]\n");
 
     setupDecoders();
     if (di > max_decoders)
       printf("ERROR: decoders-array too small. Memory corruption.");
 
+    uint8_t nodeId = 60;
     rfa.init(nodeId, 42, frqkHz);
 
-	while (true) {
-		receiveOOK();
-	}
+    timertick = millis();
 }
+
+void loop () {
+//	//test systick settings
+//    while ((millis() - timertick) < ticks_per_ms * 1000)
+//    	__asm("");
+//    timertick = millis();
+//    gpio_toggle(GPIOB, GPIO5);  // rev3
+
+	receiveOOK();
+}
+
