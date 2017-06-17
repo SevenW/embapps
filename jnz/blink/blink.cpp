@@ -8,8 +8,8 @@
 
 void setup (void) {
     //gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO15);   // rev1
-    gpio_mode_setup(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO5);    // rev3
-    //gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO8);    // rev4
+    //gpio_mode_setup(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO5);    // rev3
+    gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO8);    // rev4
 
     return;
 }
@@ -19,6 +19,6 @@ void loop () {
             __asm("");
 
     //gpio_toggle(GPIOA, GPIO15); // rev1
-    gpio_toggle(GPIOB, GPIO5);  // rev3
-    //gpio_toggle(GPIOA, GPIO8);  // rev4
+    //gpio_toggle(GPIOB, GPIO5);  // rev3
+    gpio_toggle(GPIOA, GPIO8);  // rev4
 }
